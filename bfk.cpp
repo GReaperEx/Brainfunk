@@ -23,7 +23,7 @@
 #include <cstring>
 #include <cstdint>
 
-#define VERSION "0.1a"
+#define VERSION "0.1.2"
 
 using namespace std;
 
@@ -54,13 +54,10 @@ public:
         delete [] pool;
     }
 
-    void wrapPointer(bool justDOIT) {
-        ptrWrap = justDOIT;
-    }
-
+    //! Converts BF code to manageable token blocks, compressed/optimized if possible
     void translate(istream& input) {
         char c;
-        int bracesCount = 0;
+        int bracesCount = 0; //! Counter to check for unbalanced braces
 
         instructions.clear();
 
@@ -71,6 +68,7 @@ public:
             case '<':
             case '+':
             case '-':
+                //! A way to "optimize"/compress BF code, add many consecutive commands together
                 if (!instructions.empty() && instructions.back().getToken() == c) {
                     instructions.back().incr();
                 } else {
@@ -96,6 +94,7 @@ public:
         }
     }
 
+    //! Runs translated code
     void run() {
         IP = 0;
         while (IP < instructions.size()) {
@@ -104,8 +103,8 @@ public:
         }
     }
 
+    //! Compiles translated code into C source
     void compile(ostream& output) {
-        IP = 0;
         output << "#include <stdio.h>" << endl;
         output << "#include <stdint.h>" << endl;
         output << "#include <stdlib.h>" << endl;
@@ -128,9 +127,8 @@ public:
         output << "p = calloc(" << cellCount << ", " << cellSize << ");" << endl;
         output << "int index = 0;" << endl;
 
-        while (IP < instructions.size()) {
-            instructions[IP].compile(output);
-            ++IP;
+        for (auto it = instructions.begin(); it != instructions.end(); it++) {
+            it->compile(output);
         }
 
         output << "free(p);" << endl;
@@ -138,14 +136,15 @@ public:
     }
 
 private:
-    char* pool;
-    int cellSize;
-    int cellCount;
+    char* pool;    //! The available memory, dynamically allocated
+    int cellSize;  //! Size in bytes of each cell
+    int cellCount; //! How many cells the "tape"/memory contains
 
-    int curPtrPos;
-    unsigned IP;
-    bool ptrWrap; //! Wrap the pointer around instead of generating error message
+    int curPtrPos; //! Selected memory cell
+    unsigned IP;   //! Interpretor only, pseudo Instruction Pointer
+    bool ptrWrap;  //! Wrap the pointer around instead of generating error message
 
+    //! Internal type for instructions
     class BFinstruction
     {
     public:
@@ -157,9 +156,6 @@ private:
             return token;
         }
 
-        int getRepeat() const {
-            return repeat;
-        }
         void incr() {
             ++repeat;
         }
@@ -264,6 +260,7 @@ private:
                     (parent.cellSize == 4 && ((uint32_t*)parent.pool)[parent.curPtrPos] == 0) ||
                     (parent.cellSize == 8 && ((uint64_t*)parent.pool)[parent.curPtrPos] == 0)) {
                     int depth = 1;
+                    //! Make sure the brace it jumps to is the correct one, at the same level
                     while (depth > 0) {
                         ++parent.IP;
                         char token = parent.instructions[parent.IP].getToken();
@@ -281,6 +278,7 @@ private:
                     (parent.cellSize == 4 && ((uint32_t*)parent.pool)[parent.curPtrPos] != 0) ||
                     (parent.cellSize == 8 && ((uint64_t*)parent.pool)[parent.curPtrPos] != 0)) {
                     int depth = 1;
+                    //! Make sure the brace it jumps to is the correct one, at the same level
                     while (depth > 0) {
                         --parent.IP;
                         char token = parent.instructions[parent.IP].getToken();
@@ -335,10 +333,10 @@ private:
         }
 
     private:
-        char token;
-        int repeat;
+        char token; //! What this command is
+        int repeat; //! How many times to repeat it
 
-        bfState& parent;
+        bfState& parent; //! Has to have access to its parent's state
     };
     vector<BFinstruction> instructions;
 };
@@ -371,21 +369,13 @@ int main(int argc, char* argv[])
             cout << "Brainfunk v" VERSION << endl;
             exit(0);
         } else if (strncmp(argv[i], "--cell-size=", 12) == 0) {
-            int temp;
-            try {
-                temp = stoi(string(&(argv[i][12])));
-            } catch (invalid_argument& e) {
-                temp = 0;
+            if (!(stringstream(&argv[i][12]) >> cellSize)) {
+                cellSize = 0; //! Have it get handled by bsState's constructor
             }
-            cellSize = temp;
         } else if (strncmp(argv[i], "--cell-count=", 13) == 0) {
-            int temp;
-            try {
-                temp = stoi(string(&(argv[i][13])));
-            } catch (invalid_argument& e) {
-                temp = 0;
+            if (!(stringstream(&argv[i][13]) >> cellCount)) {
+                cellCount = 0;
             }
-            cellCount = temp;
         } else if (temp == "--wrap-pointer") {
             wrapPtr = true;
         } else if (temp == "-c" || temp == "--compile") {
@@ -411,7 +401,7 @@ int main(int argc, char* argv[])
         if (input_file.empty()) {
             throw runtime_error("No input file was given.");
         }
-        //cout << "abs" << endl;
+
         bfState myBF(cellSize, cellCount, wrapPtr);
 
         ifstream inputStream(input_file);
