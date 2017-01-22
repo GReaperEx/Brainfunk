@@ -37,16 +37,21 @@ public:
         if (count <= 0) {
             throw runtime_error("Invalid cell count. Must be greater than zero.");
         } else if (count < 9999) {
-            cerr << "Warning: Having less than 9999 cells isn't considered \"nice\".";
+            cerr << "Warning: Having less than 9999 cells isn't considered \"nice\"." << endl;
         }
 
         cellSize = size;
         cellCount = count;
         pool = new char[cellSize*cellCount];
+        memset(pool, 0, cellSize*cellCount);
 
         curPtrPos = 0;
         IP = 0;
         ptrWrap = wrapPtr;
+    }
+
+    ~bfState() {
+        delete [] pool;
     }
 
     void wrapPointer(bool justDOIT) {
@@ -120,7 +125,7 @@ public:
             output << "uint64_t* ";
         break;
         }
-        output << "p = malloc(" << cellCount*cellSize << ");" << endl;
+        output << "p = calloc(" << cellCount << ", " << cellSize << ");" << endl;
         output << "int index = 0;" << endl;
 
         while (IP < instructions.size()) {
@@ -219,7 +224,21 @@ private:
                 }
             break;
             case '.':
-                cout.put(parent.pool[parent.curPtrPos*parent.cellSize]);
+                switch (parent.cellSize)
+                {
+                case 1:
+                    cout.put((char)((uint8_t*)parent.pool)[parent.curPtrPos]);
+                break;
+                case 2:
+                    cout.put((char)((uint16_t*)parent.pool)[parent.curPtrPos]);
+                break;
+                case 4:
+                    cout.put((char)((uint32_t*)parent.pool)[parent.curPtrPos]);
+                break;
+                case 8:
+                    cout.put((char)((uint64_t*)parent.pool)[parent.curPtrPos]);
+                break;
+                }
             break;
             case ',':
                 c = cin.get();
@@ -352,13 +371,21 @@ int main(int argc, char* argv[])
             cout << "Brainfunk v" VERSION << endl;
             exit(0);
         } else if (strncmp(argv[i], "--cell-size=", 12) == 0) {
-            if (!(stringstream(&argv[i][12]) >> cellSize)) {
-                cellSize = 0;
+            int temp;
+            try {
+                temp = stoi(string(&(argv[i][12])));
+            } catch (invalid_argument& e) {
+                temp = 0;
             }
+            cellSize = temp;
         } else if (strncmp(argv[i], "--cell-count=", 13) == 0) {
-            if (!(stringstream(&argv[i][12]) >> cellCount)) {
-                cellCount = 0;
+            int temp;
+            try {
+                temp = stoi(string(&(argv[i][13])));
+            } catch (invalid_argument& e) {
+                temp = 0;
             }
+            cellCount = temp;
         } else if (temp == "--wrap-pointer") {
             wrapPtr = true;
         } else if (temp == "-c" || temp == "--compile") {
@@ -384,7 +411,7 @@ int main(int argc, char* argv[])
         if (input_file.empty()) {
             throw runtime_error("No input file was given.");
         }
-
+        //cout << "abs" << endl;
         bfState myBF(cellSize, cellCount, wrapPtr);
 
         ifstream inputStream(input_file);
