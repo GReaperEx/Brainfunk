@@ -392,7 +392,7 @@ int main(int argc, char* argv[])
             compile = true;
         } else if (temp == "-o") {
             if (i+1 < argc) {
-                output_file = argv[i+1];
+                output_file = argv[++i];
             } else {
                 cerr << "Error: Expected output file after \"-o\" option." << endl;
                 exit(-1);
