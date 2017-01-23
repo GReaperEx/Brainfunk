@@ -14,18 +14,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "CVanillaState.h"
+ #include "CExtendedState.h"
 
 using namespace std;
 
-CVanillaState::CVanillaState(int size, int count, bool wrapPtr, bool dynamicTape)
-: IBasicState(size, count, wrapPtr, dynamicTape), curPtrPos(0), IP(0)
+CExtendedState::CExtendedState(int size)
+: IBasicState(size, 10000, false, true), curPtrPos(0), IP(0), storage({0})
 {}
 
-CVanillaState::~CVanillaState()
+CExtendedState::~CExtendedState()
 {}
 
-void CVanillaState::translate(istream& input)
+void CExtendedState::translate(istream& input)
 {
     char c;
     int bracesCount = 0; //! Counter to check for unbalanced braces
@@ -39,6 +39,8 @@ void CVanillaState::translate(istream& input)
         case '<':
         case '+':
         case '-':
+        case '}':
+        case '{':
             //! A way to "optimize"/compress BF code, add many consecutive commands together
             if (!instructions.empty() && instructions.back().token == c) {
                 instructions.back().incr();
@@ -48,6 +50,13 @@ void CVanillaState::translate(istream& input)
         break;
         case '.':
         case ',':
+        case '@':
+        case '$':
+        case '!':
+        case '~':
+        case '^':
+        case '&':
+        case '|':
             instructions.push_back(BFinstr(c));
         break;
         case '[':
@@ -65,7 +74,7 @@ void CVanillaState::translate(istream& input)
     }
 }
 
-void CVanillaState::run()
+void CExtendedState::run()
 {
     IP = 0;
     while (IP < instructions.size()) {
@@ -136,39 +145,85 @@ void CVanillaState::run()
                 }
             }
         break;
+        case '@':
+            IP = instructions.size();
+        break;
+        case '$':
+            storage = getCell(curPtrPos);
+        break;
+        case '!':
+            setCell(curPtrPos, storage);
+        break;
+        case '{':
+        {
+            CellType temp = getCell(curPtrPos);
+            temp.c64 <<= instructions[IP].repeat;
+            setCell(curPtrPos, temp);
+        }
+        break;
+        case '}':
+        {
+            CellType temp = getCell(curPtrPos);
+            temp.c64 >>= instructions[IP].repeat;
+            setCell(curPtrPos, temp);
+        }
+        break;
+        case '~':
+        {
+            CellType temp = getCell(curPtrPos);
+            temp.c64 = ~temp.c64;
+            setCell(curPtrPos, temp);
+        }
+        break;
+        case '^':
+        {
+            CellType temp = getCell(curPtrPos);
+            temp.c64 ^= storage.c64;
+            setCell(curPtrPos, temp);
+        }
+        break;
+        case '&':
+        {
+            CellType temp = getCell(curPtrPos);
+            temp.c64 &= storage.c64;
+            setCell(curPtrPos, temp);
+        }
+        break;
+        case '|':
+        {
+            CellType temp = getCell(curPtrPos);
+            temp.c64 |= storage.c64;
+            setCell(curPtrPos, temp);
+        }
+        break;
         }
 
         ++IP;
     }
 }
 
-void CVanillaState::compile(ostream& output)
+void CExtendedState::compile(ostream& output)
 {
     output << "#include <stdio.h>" << endl;
+    output << "#include <string.h>" << endl;
     output << "#include <stdint.h>" << endl;
     output << "#include <stdlib.h>" << endl;
 
-    if (isDynamic()) {
-        output << "void* incReallocPtr(void* p, int* size, int index) {" << endl;
-        output << "p = realloc(p, (index+1)*" << getCellSize() << ");" << endl;
-        output << "if (!p) {" << endl;
-        output << "fputs(\"Error: Out of memory!\\n\", stderr);" << endl;
-        output << "exit(-1);" << endl;
-        output << "}" << endl;
-        output << "memset((char*)p+*size*" << getCellSize() << ", 0, ((index+1)-*size)*" << getCellSize() << ");" << endl;
-        output << "*size = index+1;" << endl;
-        output << "return p;" << endl;
-        output << "}" << endl;
-    } else if (!wrapsPointer()) {
-        output << "void incError() {" << endl;
-        output << "fputs(\"Error: Tried to increment pointer beyond upper bound.\\n\", stderr);" << endl;
-        output << "exit(-1);" << endl;
-        output << "}" << endl;
-        output << "void decError() {" << endl;
-        output << "fputs(\"Error: Tried to decrement pointer beyond lower bound.\\n\", stderr);" << endl;
-        output << "exit(-1);" << endl;
-        output << "}" << endl;
-    }
+    output << "void* incReallocPtr(void* p, int* size, int index) {" << endl;
+    output << "p = realloc(p, (index+1)*" << getCellSize() << ");" << endl;
+    output << "if (!p) {" << endl;
+    output << "fputs(\"Error: Out of memory!\\n\", stderr);" << endl;
+    output << "exit(-1);" << endl;
+    output << "}" << endl;
+    output << "memset((char*)p+*size*" << getCellSize() << ", 0, ((index+1)-*size)*" << getCellSize() << ");" << endl;
+    output << "*size = index+1;" << endl;
+    output << "return p;" << endl;
+    output << "}" << endl;
+
+    output << "void decError() {" << endl;
+    output << "fputs(\"Error: Tried to decrement pointer beyond lower bound.\\n\", stderr);" << endl;
+    output << "exit(-1);" << endl;
+    output << "}" << endl;
 
     output << "int main() {" << endl;
     switch (getCellSize())
@@ -189,6 +244,24 @@ void CVanillaState::compile(ostream& output)
     output << "p = calloc(" << getCellCount() << ", " << getCellSize() << ");" << endl;
     output << "int index = 0;" << endl;
     output << "int size = " << getCellCount() << ';' << endl;
+    output << "";
+
+    switch (getCellSize())
+    {
+    case 1:
+        output << "uint8_t ";
+    break;
+    case 2:
+        output << "uint16_t ";
+    break;
+    case 4:
+        output << "uint32_t ";
+    break;
+    case 8:
+        output << "uint64_t ";
+    break;
+    }
+    output << "storage = 0;";
 
     for (auto it = instructions.begin(); it != instructions.end(); it++) {
         int repeat = it->repeat;
@@ -200,22 +273,14 @@ void CVanillaState::compile(ostream& output)
             } else {
                 output << "index += "<< repeat << ';' << endl;
                 output << "if (index >= size) {" << endl;
-                if (isDynamic()) {
-                    output << "p = incReallocPtr(p, &size, index);" << endl;
-                } else {
-                    output << "incError();" << endl;
-                }
+                output << "p = incReallocPtr(p, &size, index);" << endl;
                 output << "}" << endl;
             }
         break;
         case '<':
             output << "index -= " << repeat << ';' << endl;
             output << "if (index < 0) {" << endl;
-            if (wrapsPointer()) {
-                output << "index = " << getCellCount() << " + index % " << getCellCount() << ';' << endl;
-            } else {
-                output << "decError();" << endl;
-            }
+            output << "decError();" << endl;
             output << "}" << endl;
         break;
         case '+':
@@ -236,9 +301,37 @@ void CVanillaState::compile(ostream& output)
         case ']':
             output << "}" << endl;
         break;
+        case '@':
+            output << "exit(0);" << endl;
+        break;
+        case '$':
+            output << "storage = p[index];" << endl;
+        break;
+        case '!':
+            output << "p[index] = storage;" << endl;
+        break;
+        case '{':
+            output << "p[index] <<= " << repeat << ';' << endl;
+        break;
+        case '}':
+            output << "p[index] >>= " << repeat << ';' << endl;
+        break;
+        case '~':
+            output << "p[index] = ~p[index];" << endl;
+        break;
+        case '^':
+            output << "p[index] ^= storage;" << endl;
+        break;
+        case '&':
+            output << "p[index] &= storage;" << endl;
+        break;
+        case '|':
+            output << "p[index] |= storage;" << endl;
+        break;
         }
     }
 
     output << "free(p);" << endl;
     output << "}" << endl;
 }
+

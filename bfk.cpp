@@ -24,6 +24,7 @@
 #include <cstdint>
 
 #include "CVanillaState.h"
+#include "CExtendedState.h"
 
 #define VERSION "0.2.0"
 
@@ -35,6 +36,8 @@ int main(int argc, char* argv[])
     int cellCount = 32768; //! More than 30k, aligned for possible optimization when compiling BF code
     bool wrapPtr = false;
     bool dynamic = false;
+
+    bool useExtended = false;
 
     bool compile = false;
     string output_file = "a.out";
@@ -52,7 +55,8 @@ int main(int argc, char* argv[])
             cout << "    --cell-count=X   ; Sets amount of available cells (Default=32768)" << endl;
             cout << "    --wrap-pointer   ; Confines the memory pointer between bounds" << endl;
             cout << "    --dynamic-tape   ; Makes the \'tape\' grow dynamically, without limit" << endl;
-            cout << "    -c, --compile    ; Compiles BF code into native binary, by using gcc" << endl;
+            cout << "    -x, --extended   ; Uses \'Extended Brainfuck Type I\' instead of vanilla" << endl;
+            cout << "    -c, --compile    ; Compiles BF code into native binary, if possible" << endl;
             cout << "    -o X, --output=X ; For compiling only (Default=\"a.out\")" << endl;
             exit(0);
         } else if (temp == "-v" || temp == "--version") {
@@ -71,6 +75,8 @@ int main(int argc, char* argv[])
             wrapPtr = true;
         } else if (temp == "--dynamic-tape") {
             dynamic = true;
+        } else if (temp == "-x" || temp == "--extended") {
+            useExtended = true;
         } else if (temp == "-c" || temp == "--compile") {
             compile = true;
         } else if (temp == "-o") {
@@ -97,7 +103,14 @@ int main(int argc, char* argv[])
 
         IBasicState* myBF;
 
-        myBF = new CVanillaState(cellSize, cellCount, wrapPtr, dynamic);
+        if (useExtended) {
+            myBF = new CExtendedState(cellSize);
+            if (wrapPtr) {
+                cerr << "Warning: Pointer wrap-around ignored." << endl;
+            }
+        } else {
+            myBF = new CVanillaState(cellSize, cellCount, wrapPtr, dynamic);
+        }
 
         ifstream inputStream(input_file);
         if (!inputStream.is_open()) {
