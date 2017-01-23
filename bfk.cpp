@@ -23,323 +23,11 @@
 #include <cstring>
 #include <cstdint>
 
-#define VERSION "0.1.2"
+#include "CVanillaState.h"
+
+#define VERSION "0.2.0"
 
 using namespace std;
-
-class bfState
-{
-public:
-    bfState(int size, int count, bool wrapPtr) {
-        if (size != 1 && size != 2 && size != 4 && size != 8) {
-            throw runtime_error("Invalid cell size. Only 1, 2, 4 and 8 are supported.");
-        }
-        if (count <= 0) {
-            throw runtime_error("Invalid cell count. Must be greater than zero.");
-        } else if (count < 9999) {
-            cerr << "Warning: Having less than 9999 cells isn't considered \"nice\"." << endl;
-        }
-
-        cellSize = size;
-        cellCount = count;
-        pool = new char[cellSize*cellCount];
-        memset(pool, 0, cellSize*cellCount);
-
-        curPtrPos = 0;
-        IP = 0;
-        ptrWrap = wrapPtr;
-    }
-
-    ~bfState() {
-        delete [] pool;
-    }
-
-    //! Converts BF code to manageable token blocks, compressed/optimized if possible
-    void translate(istream& input) {
-        char c;
-        int bracesCount = 0; //! Counter to check for unbalanced braces
-
-        instructions.clear();
-
-        while (input.get(c)) {
-            switch (c)
-            {
-            case '>':
-            case '<':
-            case '+':
-            case '-':
-                //! A way to "optimize"/compress BF code, add many consecutive commands together
-                if (!instructions.empty() && instructions.back().getToken() == c) {
-                    instructions.back().incr();
-                } else {
-                    instructions.push_back(BFinstruction(*this, c));
-                }
-            break;
-            case '.':
-            case ',':
-                instructions.push_back(BFinstruction(*this, c));
-            break;
-            case '[':
-                ++bracesCount;
-                instructions.push_back(BFinstruction(*this, c));
-            break;
-            case ']':
-                --bracesCount;
-                instructions.push_back(BFinstruction(*this, c));
-            break;
-            }
-        }
-        if (bracesCount != 0) {
-            throw runtime_error("Opening and closing braces don't match.");
-        }
-    }
-
-    //! Runs translated code
-    void run() {
-        IP = 0;
-        while (IP < instructions.size()) {
-            instructions[IP].run();
-            ++IP;
-        }
-    }
-
-    //! Compiles translated code into C source
-    void compile(ostream& output) {
-        output << "#include <stdio.h>" << endl;
-        output << "#include <stdint.h>" << endl;
-        output << "#include <stdlib.h>" << endl;
-        output << "int main() {" << endl;
-        switch (cellSize)
-        {
-        case 1:
-            output << "uint8_t* ";
-        break;
-        case 2:
-            output << "uint16_t* ";
-        break;
-        case 4:
-            output << "uint32_t* ";
-        break;
-        case 8:
-            output << "uint64_t* ";
-        break;
-        }
-        output << "p = calloc(" << cellCount << ", " << cellSize << ");" << endl;
-        output << "int index = 0;" << endl;
-
-        for (auto it = instructions.begin(); it != instructions.end(); it++) {
-            it->compile(output);
-        }
-
-        output << "free(p);" << endl;
-        output << "}" << endl;
-    }
-
-private:
-    char* pool;    //! The available memory, dynamically allocated
-    int cellSize;  //! Size in bytes of each cell
-    int cellCount; //! How many cells the "tape"/memory contains
-
-    int curPtrPos; //! Selected memory cell
-    unsigned IP;   //! Interpretor only, pseudo Instruction Pointer
-    bool ptrWrap;  //! Wrap the pointer around instead of generating error message
-
-    //! Internal type for instructions
-    class BFinstruction
-    {
-    public:
-        BFinstruction(bfState& itsParent, char tok)
-        : token(tok), repeat(1), parent(itsParent)
-        {}
-
-        char getToken() const {
-            return token;
-        }
-
-        void incr() {
-            ++repeat;
-        }
-
-        void run() {
-            int c;
-
-            switch (token)
-            {
-            case '>':
-                parent.curPtrPos += repeat;
-                if (parent.curPtrPos >= parent.cellCount) {
-                    if (parent.ptrWrap) {
-                        parent.curPtrPos %= parent.cellCount;
-                    } else {
-                        throw runtime_error("Pointer was incremented too much.");
-                    }
-                }
-            break;
-            case '<':
-                parent.curPtrPos -= repeat;
-                if (parent.curPtrPos < 0) {
-                    if (parent.ptrWrap) {
-                        parent.curPtrPos = parent.cellCount + parent.curPtrPos % parent.cellCount;
-                    } else {
-                        throw runtime_error("Pointer was decremented too much.");
-                    }
-                }
-            break;
-            case '+':
-                switch (parent.cellSize)
-                {
-                case 1:
-                    ((uint8_t*)parent.pool)[parent.curPtrPos] += repeat;
-                break;
-                case 2:
-                    ((uint16_t*)parent.pool)[parent.curPtrPos] += repeat;
-                break;
-                case 4:
-                    ((uint32_t*)parent.pool)[parent.curPtrPos] += repeat;
-                break;
-                case 8:
-                    ((uint64_t*)parent.pool)[parent.curPtrPos] += repeat;
-                break;
-                }
-            break;
-            case '-':
-                switch (parent.cellSize)
-                {
-                case 1:
-                    ((uint8_t*)parent.pool)[parent.curPtrPos] -= repeat;
-                break;
-                case 2:
-                    ((uint16_t*)parent.pool)[parent.curPtrPos] -= repeat;
-                break;
-                case 4:
-                    ((uint32_t*)parent.pool)[parent.curPtrPos] -= repeat;
-                break;
-                case 8:
-                    ((uint64_t*)parent.pool)[parent.curPtrPos] -= repeat;
-                break;
-                }
-            break;
-            case '.':
-                switch (parent.cellSize)
-                {
-                case 1:
-                    cout.put((char)((uint8_t*)parent.pool)[parent.curPtrPos]);
-                break;
-                case 2:
-                    cout.put((char)((uint16_t*)parent.pool)[parent.curPtrPos]);
-                break;
-                case 4:
-                    cout.put((char)((uint32_t*)parent.pool)[parent.curPtrPos]);
-                break;
-                case 8:
-                    cout.put((char)((uint64_t*)parent.pool)[parent.curPtrPos]);
-                break;
-                }
-            break;
-            case ',':
-                c = cin.get();
-                switch (parent.cellSize)
-                {
-                case 1:
-                    ((uint8_t*)parent.pool)[parent.curPtrPos] = c;
-                break;
-                case 2:
-                    ((uint16_t*)parent.pool)[parent.curPtrPos] = c;
-                break;
-                case 4:
-                    ((uint32_t*)parent.pool)[parent.curPtrPos] = c;
-                break;
-                case 8:
-                    ((uint64_t*)parent.pool)[parent.curPtrPos] = c;
-                break;
-                }
-            break;
-            case '[':
-                if ((parent.cellSize == 1 && ( (uint8_t*)parent.pool)[parent.curPtrPos] == 0) ||
-                    (parent.cellSize == 2 && ((uint16_t*)parent.pool)[parent.curPtrPos] == 0) ||
-                    (parent.cellSize == 4 && ((uint32_t*)parent.pool)[parent.curPtrPos] == 0) ||
-                    (parent.cellSize == 8 && ((uint64_t*)parent.pool)[parent.curPtrPos] == 0)) {
-                    int depth = 1;
-                    //! Make sure the brace it jumps to is the correct one, at the same level
-                    while (depth > 0) {
-                        ++parent.IP;
-                        char token = parent.instructions[parent.IP].getToken();
-                        if (token == '[') {
-                            ++depth;
-                        } else if (token == ']') {
-                            --depth;
-                        }
-                    }
-                }
-            break;
-            case ']':
-                if ((parent.cellSize == 1 && ( (uint8_t*)parent.pool)[parent.curPtrPos] != 0) ||
-                    (parent.cellSize == 2 && ((uint16_t*)parent.pool)[parent.curPtrPos] != 0) ||
-                    (parent.cellSize == 4 && ((uint32_t*)parent.pool)[parent.curPtrPos] != 0) ||
-                    (parent.cellSize == 8 && ((uint64_t*)parent.pool)[parent.curPtrPos] != 0)) {
-                    int depth = 1;
-                    //! Make sure the brace it jumps to is the correct one, at the same level
-                    while (depth > 0) {
-                        --parent.IP;
-                        char token = parent.instructions[parent.IP].getToken();
-                        if (token == '[') {
-                            --depth;
-                        } else if (token == ']') {
-                            ++depth;
-                        }
-                    }
-                }
-            break;
-            }
-        }
-
-        void compile(ostream& output) {
-            switch (token)
-            {
-            case '>':
-                if (parent.ptrWrap) {
-                    output << "index = (index + " << repeat << ") % " << parent.cellCount << ';' << endl;
-                } else {
-                    output << "index += " << repeat << ';' << endl;
-                }
-            break;
-            case '<':
-                output << "index -= " << repeat << ';' << endl;
-                if (parent.ptrWrap) {
-                    output << "if (index < 0) {" << endl;
-                    output << "index = " << parent.cellCount << " + index % " << parent.cellCount << ';' << endl;
-                    output << "}" << endl;
-                }
-            break;
-            case '+':
-                output << "p[index] += " << repeat << ';' << endl;
-            break;
-            case '-':
-                output << "p[index] -= " << repeat << ';' << endl;
-            break;
-            case '.':
-                output << "putchar(p[index]);" << endl;
-            break;
-            case ',':
-                output << "p[index] = getchar();" << endl;
-            break;
-            case '[':
-                output << "while (p[index]) {" << endl;
-            break;
-            case ']':
-                output << "}" << endl;
-            break;
-            }
-        }
-
-    private:
-        char token; //! What this command is
-        int repeat; //! How many times to repeat it
-
-        bfState& parent; //! Has to have access to its parent's state
-    };
-    vector<BFinstruction> instructions;
-};
 
 int main(int argc, char* argv[])
 {
@@ -402,13 +90,15 @@ int main(int argc, char* argv[])
             throw runtime_error("No input file was given.");
         }
 
-        bfState myBF(cellSize, cellCount, wrapPtr);
+        IBasicState* myBF;
+
+        myBF = new CVanillaState(cellSize, cellCount, wrapPtr, false);
 
         ifstream inputStream(input_file);
         if (!inputStream.is_open()) {
             throw runtime_error("Unable to open "+input_file+" for reading.");
         }
-        myBF.translate(inputStream);
+        myBF->translate(inputStream);
         inputStream.close();
 
         if (compile) {
@@ -417,7 +107,7 @@ int main(int argc, char* argv[])
             if (!outputStream.is_open()) {
                 throw runtime_error("Unable to open "+tempFile+" for writing.");
             }
-            myBF.compile(outputStream);
+            myBF->compile(outputStream);
             outputStream.close();
 
             if (system(("gcc -O3 -s -o "+output_file+" "+tempFile).c_str()) != 0) {
@@ -425,7 +115,7 @@ int main(int argc, char* argv[])
             }
             remove(tempFile.c_str());
         } else {
-            myBF.run();
+            myBF->run();
         }
     } catch (exception& e) {
         cerr << "Error: " << e.what() << endl;

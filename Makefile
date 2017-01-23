@@ -1,14 +1,25 @@
-FLAGS=-O3 -s --std=gnu++11
+CFLAGS=-O3 --std=gnu++11
+LFLAGS=-s
+OBJ = bfk.o CVanillaState.o
 INSTALL_PATH=/usr/local
 
-bfk: bfk.cpp
-	g++ $(FLAGS) -o bfk bfk.cpp
+bfk: $(OBJ)
+	g++ $(LFLAGS) -o bfk $(OBJ)
+
+CVanillaState.o: IBasicState.h CVanillaState.h CVanillaState.cpp
+	g++ $(CFLAGS) -c -o CVanillaState.o CVanillaState.cpp
+
+bfk.o: IBasicState.h CVanillaState.h bfk.cpp
+	g++ $(CFLAGS) -c -o bfk.o bfk.cpp
 
 .PHONY: clean install
 
 clean:
 	rm -f bfk
 
-install:
-	install -m 0755 $(INSTALL_PATH)/bin
+install: bfk
+	install -m 0755 bfk $(INSTALL_PATH)/bin/
+
+remove:
+	rm -fv $(INSTALL_PATH)/bin/bfk
 
