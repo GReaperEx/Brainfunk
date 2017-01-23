@@ -1,19 +1,24 @@
-CFLAGS=-O3 --std=gnu++11
+CFLAGS=-O3 --std=gnu++11 -I "include/"
 LFLAGS=-s
-OBJ = bfk.o CVanillaState.o CExtendedState.o
+OBJD = obj
+OBJ = $(OBJD)/bfk.o $(OBJD)/CVanillaState.o $(OBJD)/CExtendedState.o
+SRCD = source
 INSTALL_PATH=/usr/local
 
 bfk: $(OBJ)
 	g++ $(LFLAGS) -o bfk $(OBJ)
 
-CExtendedState.o: IBasicState.h CExtendedState.h CExtendedState.cpp
-	g++ $(CFLAGS) -c -o CExtendedState.o CExtendedState.cpp
+$(OBJD)/CExtendedState.o: $(SRCD)/IBasicState.h $(SRCD)/CExtendedState.h $(SRCD)/CExtendedState.cpp $(OBJD)
+	g++ $(CFLAGS) -c -o $(OBJD)/CExtendedState.o $(SRCD)/CExtendedState.cpp
 
-CVanillaState.o: IBasicState.h CVanillaState.h CVanillaState.cpp
-	g++ $(CFLAGS) -c -o CVanillaState.o CVanillaState.cpp
+$(OBJD)/CVanillaState.o: $(SRCD)/IBasicState.h $(SRCD)/CVanillaState.h $(SRCD)/CVanillaState.cpp $(OBJD)
+	g++ $(CFLAGS) -c -o $(OBJD)/CVanillaState.o $(SRCD)/CVanillaState.cpp
 
-bfk.o: IBasicState.h CVanillaState.h CExtendedState.h bfk.cpp
-	g++ $(CFLAGS) -c -o bfk.o bfk.cpp
+$(OBJD)/bfk.o: $(SRCD)/IBasicState.h $(SRCD)/CVanillaState.h $(SRCD)/CExtendedState.h $(SRCD)/bfk.cpp $(OBJD)
+	g++ $(CFLAGS) -c -o $(OBJD)/bfk.o $(SRCD)/bfk.cpp
+
+$(OBJD):
+	mkdir $(OBJD)
 
 .PHONY: clean install
 
