@@ -59,10 +59,10 @@ void CExtended2State::translate(std::istream& input)
     //! Uses any data left to initialize the tape
     //! Understands escape sequences, symbol, octal and hex
     //! Only hex values can be > 255( technically, octal too but not for much )
-    while (input >> c) {
+    while (input.get(c)) {
         CellType temp = { 0 };
         if (c == '\\') {
-            if (!(input >> c)) {
+            if (!input.get(c)) {
                 throw runtime_error("Data: Expected symbol after \'\\\'.");
             }
             switch (c)
