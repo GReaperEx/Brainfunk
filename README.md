@@ -13,4 +13,5 @@ Supported languages up-to-date:
 * Brainfuck
 * Extended Brainfuck
   * Type I
+  * Type II
 
