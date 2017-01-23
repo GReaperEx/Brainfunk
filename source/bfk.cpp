@@ -25,10 +25,13 @@
 
 #include "CVanillaState.h"
 #include "CExtendedState.h"
+#include "CExtended2State.h"
 
-#define VERSION "0.2.0"
+#define VERSION "0.3.0"
 
 using namespace std;
+
+enum LangVariants { VANILLA, EXTENDED, EXTENDED2 };
 
 int main(int argc, char* argv[])
 {
@@ -37,7 +40,7 @@ int main(int argc, char* argv[])
     bool wrapPtr = false;
     bool dynamic = false;
 
-    bool useExtended = false;
+    LangVariants useVariant = VANILLA;
 
     bool compile = false;
     string output_file = "a.out";
@@ -56,6 +59,7 @@ int main(int argc, char* argv[])
             cout << "    --wrap-pointer   ; Confines the memory pointer between bounds" << endl;
             cout << "    --dynamic-tape   ; Makes the \'tape\' grow dynamically, without limit" << endl;
             cout << "    -x, --extended   ; Uses \'Extended Brainfuck Type I\' instead of vanilla" << endl;
+            cout << "    -x2, --extended2 ; User Extended Brainfuck Type II instead" << endl;
             cout << "    -c, --compile    ; Compiles BF code into native binary, if possible" << endl;
             cout << "    -o X, --output=X ; For compiling only (Default=\"a.out\")" << endl;
             exit(0);
@@ -76,7 +80,9 @@ int main(int argc, char* argv[])
         } else if (temp == "--dynamic-tape") {
             dynamic = true;
         } else if (temp == "-x" || temp == "--extended") {
-            useExtended = true;
+            useVariant = EXTENDED;
+        } else if (temp == "-x2" || temp == "--extended2") {
+            useVariant = EXTENDED2;
         } else if (temp == "-c" || temp == "--compile") {
             compile = true;
         } else if (temp == "-o") {
@@ -103,13 +109,23 @@ int main(int argc, char* argv[])
 
         IBasicState* myBF;
 
-        if (useExtended) {
+        switch (useVariant)
+        {
+        case VANILLA:
+            myBF = new CVanillaState(cellSize, cellCount, wrapPtr, dynamic);
+        break;
+        case EXTENDED:
             myBF = new CExtendedState(cellSize);
             if (wrapPtr) {
                 cerr << "Warning: Pointer wrap-around ignored." << endl;
             }
-        } else {
-            myBF = new CVanillaState(cellSize, cellCount, wrapPtr, dynamic);
+        break;
+        case EXTENDED2:
+            myBF = new CExtended2State(cellSize);
+            if (wrapPtr) {
+                cerr << "Warning: Pointer wrap-around ignored." << endl;
+            }
+        break;
         }
 
         ifstream inputStream(input_file);
