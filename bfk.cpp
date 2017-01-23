@@ -34,6 +34,8 @@ int main(int argc, char* argv[])
     int cellSize = 1;
     int cellCount = 32768; //! More than 30k, aligned for possible optimization when compiling BF code
     bool wrapPtr = false;
+    bool dynamic = false;
+
     bool compile = false;
     string output_file = "a.out";
     string input_file = "";
@@ -49,6 +51,7 @@ int main(int argc, char* argv[])
             cout << "    --cell-size=X    ; Sets cell size, only accepts 1, 2, 4 and 8 (Default=1)" << endl;
             cout << "    --cell-count=X   ; Sets amount of available cells (Default=32768)" << endl;
             cout << "    --wrap-pointer   ; Confines the memory pointer between bounds" << endl;
+            cout << "    --dynamic-tape   ; Makes the \'tape\' grow dynamically, without limit" << endl;
             cout << "    -c, --compile    ; Compiles BF code into native binary, by using gcc" << endl;
             cout << "    -o X, --output=X ; For compiling only (Default=\"a.out\")" << endl;
             exit(0);
@@ -66,6 +69,8 @@ int main(int argc, char* argv[])
             }
         } else if (temp == "--wrap-pointer") {
             wrapPtr = true;
+        } else if (temp == "--dynamic-tape") {
+            dynamic = true;
         } else if (temp == "-c" || temp == "--compile") {
             compile = true;
         } else if (temp == "-o") {
@@ -92,7 +97,7 @@ int main(int argc, char* argv[])
 
         IBasicState* myBF;
 
-        myBF = new CVanillaState(cellSize, cellCount, wrapPtr, false);
+        myBF = new CVanillaState(cellSize, cellCount, wrapPtr, dynamic);
 
         ifstream inputStream(input_file);
         if (!inputStream.is_open()) {
