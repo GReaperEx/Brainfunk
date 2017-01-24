@@ -249,10 +249,10 @@ void CExtendedState::compile(ostream& output)
         output << "uint64_t* ";
     break;
     }
-    output << "p = calloc(" << getCellCount() << ", " << getCellSize() << ");" << endl;
+    output << "p = calloc(" << max(getCellCount(), (int)tempData.size()) << ", " << getCellSize() << ");" << endl;
     output << "int index = 0;" << endl;
-    output << "int size = " << getCellCount() << ';' << endl;
-    output << "";
+    output << "int size = " << max(getCellCount(), (int)tempData.size()) << ';' << endl;
+    tempData.clear();
 
     switch (getCellSize())
     {
