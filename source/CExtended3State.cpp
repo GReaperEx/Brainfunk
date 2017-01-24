@@ -16,14 +16,12 @@
 
 #include "CExtended3State.h"
 
-
 #include <string>
-#include <iomanip>
 
 using namespace std;
 
-CExtended3State::CExtended3State(int size)
-: IBasicState(size, 10000, false, true), curPtrPos(0), IP(1), storagePos(0)
+CExtended3State::CExtended3State(int size, const string& dataFile)
+: IBasicState(size, 10000, false, true, dataFile), curPtrPos(0), IP(1), storagePos(0)
 {}
 
 CExtended3State::~CExtended3State()
@@ -58,86 +56,10 @@ void CExtended3State::translate(std::istream& input)
 
     initPtrPos = curPtrPos;
     //! Uses any data left to initialize the tape
-    //! Understands escape sequences, symbol, octal and hex
-    //! Only hex values can be > 255( technically, octal too but not for much )
-    while (input.get(c)) {
-        CellType temp = { 0 };
-        if (c == '\\') {
-            if (!input.get(c)) {
-                throw runtime_error("Data: Expected symbol after \'\\\'.");
-            }
-            switch (c)
-            {
-            case 'a':
-                temp.c8 = '\a';
-            break;
-            case 'b':
-                temp.c8 = '\b';
-            break;
-            case 'f':
-                temp.c8 = '\f';
-            break;
-            case 'n':
-                temp.c8 = '\n';
-            break;
-            case 'r':
-                temp.c8 = '\r';
-            break;
-            case 't':
-                temp.c8 = '\t';
-            break;
-            case 'v':
-                temp.c8 = '\v';
-            break;
-            case '\\':
-                temp.c8 = '\\';
-            break;
-            case '\'':
-                temp.c8 = '\'';
-            break;
-            case '\"':
-                temp.c8 = '\"';
-            break;
-            case '?':
-                temp.c8 = '?';
-            break;
-            case 'x':
-                for (int i = 0; i < getCellSize()*2; i++) {
-                    int c = tolower(input.peek());
-                    if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) {
-                        break;
-                    }
-                    c = input.get();
-
-                    temp.c64 <<= 4;
-                    if (c >= 'a' && c <= 'f') {
-                        temp.c64 += (c - 'a') + 10;
-                    } else {
-                        temp.c64 += (c - '0');
-                    }
-                }
-            break;
-            default:
-                if (!(c >= '0' && c <= '7')) {
-                    throw runtime_error("Data: Unexpected symbol after \'\\\'.");
-                }
-                for (int i = 0; i < 3; i++) {
-                    int c = tolower(input.peek());
-                    if (!(c >= '0' && c <= '7')) {
-                        break;
-                    }
-                    c = input.get();
-
-                    temp.c64 <<= 3;
-                    temp.c64 += (c - '0');
-                }
-            }
-        } else {
-            temp.c8 = c;
-        }
-
-        setCell(curPtrPos++, temp);
-    }
+    curPtrPos = parseData(curPtrPos, input);
+    //! Appends data file to tape
+    stringstream data(initData);
+    parseData(curPtrPos, data);
     curPtrPos = initPtrPos;
 }
 
@@ -411,6 +333,6 @@ void CExtended3State::run()
 
 void CExtended3State::compile(std::ostream&)
 {
-    throw runtime_error("Extended Brainfuck Type II can't be compiled.");
+    throw runtime_error("Extended Brainfuck Type III can't be compiled.");
 }
 

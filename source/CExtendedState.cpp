@@ -18,9 +18,12 @@
 
 using namespace std;
 
-CExtendedState::CExtendedState(int size)
-: IBasicState(size, 10000, false, true), curPtrPos(0), IP(0), storage({0})
-{}
+CExtendedState::CExtendedState(int size, const string& dataFile)
+: IBasicState(size, 10000, false, true, dataFile), curPtrPos(0), IP(0), storage({0})
+{
+    stringstream data(initData);
+    parseData(curPtrPos, data);
+}
 
 CExtendedState::~CExtendedState()
 {}
@@ -225,6 +228,11 @@ void CExtendedState::compile(ostream& output)
     output << "exit(-1);" << endl;
     output << "}" << endl;
 
+    string tempData = escapeData();
+    if (!initData.empty()) {
+        output << "const char datArray[] = \"'" << tempData << "\";" << endl;
+    }
+
     output << "int main() {" << endl;
     switch (getCellSize())
     {
@@ -262,6 +270,15 @@ void CExtendedState::compile(ostream& output)
     break;
     }
     output << "storage = 0;";
+
+    if (!initData.empty()) {
+        output << "{" << endl;
+        output << "int i;" << endl;
+        output << "for (i = 0; i < sizeof(datArray)-1; i++) {" << endl;
+        output << "p[i] = datArray[i];" << endl;
+        output << "}" << endl;
+        output << "}" << endl;
+    }
 
     for (auto it = instructions.begin(); it != instructions.end(); it++) {
         int repeat = it->repeat;

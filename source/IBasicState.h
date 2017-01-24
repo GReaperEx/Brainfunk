@@ -19,10 +19,14 @@
 
 #include <stdexcept>
 #include <iostream>
+#include <fstream>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <cassert>
+
+#include <sstream>
+#include <iomanip>
 
 class IBasicState
 {
@@ -33,7 +37,7 @@ public:
         wrapPtr     : Wraps the tape pointer around, can't be true if dynamicTape is also true
         dynamicTape : Makes the available tape grow dynamically when accessing out of upper bounds
      */
-    IBasicState(int size, int count, bool wrapPtr, bool dynamicTape) {
+    IBasicState(int size, int count, bool wrapPtr, bool dynamicTape, const std::string& dataFile) {
         if (size != 1 && size != 2 && size != 4 && size != 8) {
             throw std::runtime_error("Invalid cell size. Only 1, 2, 4 and 8 are supported.");
         }
@@ -60,6 +64,19 @@ public:
         tape = calloc(cellCount, cellSize);
         if (tape == nullptr) {
             throw std::runtime_error("There's not enough memory available!");
+        }
+
+        if (!dataFile.empty()) {
+            std::ifstream input(dataFile);
+            if (!input.is_open()) {
+                throw std::runtime_error("Unable to open requested data file.");
+            }
+
+            input.seekg(0, std::ios::end);
+            initData.reserve(input.tellg());
+            input.seekg(0, std::ios::beg);
+
+            initData.assign((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
         }
     }
 
@@ -139,6 +156,147 @@ protected:
         break;
         }
     }
+
+    //! Understands escape sequences, symbol, octal and hex
+    //! Only hex values can be > 255( technically, octal too but not for much )
+    int parseData(int startPos, std::istream& input) {
+        int curPos = startPos;
+        char c;
+
+        while (input.get(c)) {
+            CellType temp = { 0 };
+            if (c == '\\') {
+                if (!input.get(c)) {
+                    throw std::runtime_error("Data: Expected symbol after \'\\\'.");
+                }
+                switch (c)
+                {
+                case 'a':
+                    temp.c8 = '\a';
+                break;
+                case 'b':
+                    temp.c8 = '\b';
+                break;
+                case 'f':
+                    temp.c8 = '\f';
+                break;
+                case 'n':
+                    temp.c8 = '\n';
+                break;
+                case 'r':
+                    temp.c8 = '\r';
+                break;
+                case 't':
+                    temp.c8 = '\t';
+                break;
+                case 'v':
+                    temp.c8 = '\v';
+                break;
+                case '\\':
+                    temp.c8 = '\\';
+                break;
+                case '\'':
+                    temp.c8 = '\'';
+                break;
+                case '\"':
+                    temp.c8 = '\"';
+                break;
+                case '?':
+                    temp.c8 = '?';
+                break;
+                case 'x':
+                    for (int i = 0; i < getCellSize()*2; i++) {
+                        int c = tolower(input.peek());
+                        if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) {
+                            break;
+                        }
+                        c = input.get();
+
+                        temp.c64 <<= 4;
+                        if (c >= 'a' && c <= 'f') {
+                            temp.c64 += (c - 'a') + 10;
+                        } else {
+                            temp.c64 += (c - '0');
+                        }
+                    }
+                break;
+                default:
+                    if (!(c >= '0' && c <= '7')) {
+                        throw std::runtime_error("Data: Unexpected symbol after \'\\\'.");
+                    }
+                    for (int i = 0; i < 3; i++) {
+                        int c = tolower(input.peek());
+                        if (!(c >= '0' && c <= '7')) {
+                            break;
+                        }
+                        c = input.get();
+
+                        temp.c64 <<= 3;
+                        temp.c64 += (c - '0');
+                    }
+                }
+            } else {
+                temp.c8 = c;
+            }
+
+            setCell(curPos++, temp);
+        }
+        return curPos;
+    }
+
+    //! Does the opposite of parseData()
+    const std::string escapeData() const {
+        std::string result = "";
+
+        for (auto it = initData.begin(); it < initData.end(); it++) {
+            char c = *it;
+            switch (c)
+                {
+                case '\a':
+                    result += "\\a";
+                break;
+                case '\b':
+                    result += "\\b";
+                break;
+                case '\f':
+                    result += "\\f";
+                break;
+                case '\n':
+                    result += "\\n";
+                break;
+                case '\r':
+                    result += "\\r";
+                break;
+                case '\t':
+                    result += "\\t";
+                break;
+                case '\v':
+                    result += "\\v";
+                break;
+                case '\\':
+                    result += "\\\\";
+                break;
+                case '\'':
+                    result += "\\\'";
+                break;
+                case '\"':
+                    result += "\\\"";
+                break;
+                default:
+                    if (!isprint(c)) {
+                        std::stringstream temp;
+                        temp << std::hex << (int)c;
+                        result += "\\x" + temp.str();
+                    } else {
+                        result += c;
+                    }
+                }
+        }
+
+        return result;
+    }
+
+    std::string initData;
 
 private:
     void examineIndex(int& cellIndex) {

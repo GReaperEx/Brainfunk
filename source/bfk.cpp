@@ -46,6 +46,7 @@ int main(int argc, char* argv[])
     bool compile = false;
     string output_file = "a.out";
     string input_file = "";
+    string dataFile = "";
 
     for (int i = 1; i < argc; i++) {
         string temp(argv[i]);
@@ -64,6 +65,7 @@ int main(int argc, char* argv[])
             cout << "    -x3, --extended3 ; User Extended Brainfuck Type II instead" << endl;
             cout << "    -c, --compile    ; Compiles BF code into native binary, if possible" << endl;
             cout << "    -o X, --output=X ; For compiling only (Default=\"a.out\")" << endl;
+            cout << "    -d X, --data=X   ; Memory initialization data( ASCII file )" << endl;
             exit(0);
         } else if (temp == "-v" || temp == "--version") {
             cout << "Copyright (C) 2017, GReaperEx(Marios F.)" << endl;
@@ -107,6 +109,24 @@ int main(int argc, char* argv[])
                 cerr << "Error: Expected output file after \"--output=\" option." << endl;
                 exit(-1);
             }
+        } else if (temp == "-d") {
+            if (i+1 < argc) {
+                if (dataFile != "") {
+                    cerr << "Warning: Data file was set more than once. Ignoring previous value." << endl;
+                }
+                dataFile = argv[++i];
+            } else {
+                cerr << "Error: Expected data file after \"-d\" option." << endl;
+                exit(-1);
+            }
+        } else if (strncmp(argv[i], "--data=", 7) == 0) {
+            if (dataFile != "") {
+                cerr << "Warning: Data file was set more than once. Ignoring previous value." << endl;
+            }
+            if (!getline(stringstream(&argv[i][7]), dataFile) || dataFile.empty()) {
+                cerr << "Error: Expected data file after \"--data=\" option." << endl;
+                exit(-1);
+            }
         } else {
             if (!input_file.empty()) {
                 cerr << "Warning: Input file was set more than once. Ignoring previous value." << endl;
@@ -125,22 +145,22 @@ int main(int argc, char* argv[])
         switch (useVariant)
         {
         case VANILLA:
-            myBF = new CVanillaState(cellSize, cellCount, wrapPtr, dynamic);
+            myBF = new CVanillaState(cellSize, cellCount, wrapPtr, dynamic, dataFile);
         break;
         case EXTENDED:
-            myBF = new CExtendedState(cellSize);
+            myBF = new CExtendedState(cellSize, dataFile);
             if (wrapPtr) {
                 cerr << "Warning: Pointer wrap-around ignored." << endl;
             }
         break;
         case EXTENDED2:
-            myBF = new CExtended2State(cellSize);
+            myBF = new CExtended2State(cellSize, dataFile);
             if (wrapPtr) {
                 cerr << "Warning: Pointer wrap-around ignored." << endl;
             }
         break;
         case EXTENDED3:
-            myBF = new CExtended3State(cellSize);
+            myBF = new CExtended3State(cellSize, dataFile);
             if (wrapPtr) {
                 cerr << "Warning: Pointer wrap-around ignored." << endl;
             }

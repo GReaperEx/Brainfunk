@@ -18,9 +18,12 @@
 
 using namespace std;
 
-CVanillaState::CVanillaState(int size, int count, bool wrapPtr, bool dynamicTape)
-: IBasicState(size, count, wrapPtr, dynamicTape), curPtrPos(0), IP(0)
-{}
+CVanillaState::CVanillaState(int size, int count, bool wrapPtr, bool dynamicTape, const string& dataFile)
+: IBasicState(size, count, wrapPtr, dynamicTape, dataFile), curPtrPos(0), IP(0)
+{
+    stringstream data(initData);
+    parseData(curPtrPos, data);
+}
 
 CVanillaState::~CVanillaState()
 {}
@@ -169,6 +172,10 @@ void CVanillaState::compile(ostream& output)
         output << "exit(-1);" << endl;
         output << "}" << endl;
     }
+    string tempData = escapeData();
+    if (!initData.empty()) {
+        output << "const char datArray[] = \"" << tempData << "\";" << endl;
+    }
 
     output << "int main() {" << endl;
     switch (getCellSize())
@@ -186,9 +193,20 @@ void CVanillaState::compile(ostream& output)
         output << "uint64_t* ";
     break;
     }
-    output << "p = calloc(" << getCellCount() << ", " << getCellSize() << ");" << endl;
+
+    output << "p = calloc(" << max(getCellCount(), (int)tempData.size()) << ", " << getCellSize() << ");" << endl;
     output << "int index = 0;" << endl;
-    output << "int size = " << getCellCount() << ';' << endl;
+    output << "int size = " << max(getCellCount(), (int)tempData.size()) << ';' << endl;
+    tempData.clear();
+
+    if (!initData.empty()) {
+        output << "{" << endl;
+        output << "int i;" << endl;
+        output << "for (i = 0; i < sizeof(datArray)-1; i++) {" << endl;
+        output << "p[i] = datArray[i];" << endl;
+        output << "}" << endl;
+        output << "}" << endl;
+    }
 
     for (auto it = instructions.begin(); it != instructions.end(); it++) {
         int repeat = it->repeat;

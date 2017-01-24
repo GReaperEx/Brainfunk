@@ -25,7 +25,7 @@
 class CExtended3State : public IBasicState
 {
 public:
-    CExtended3State(int size);
+    CExtended3State(int size, const std::string& dataFile);
     ~CExtended3State();
 
     //! Prepares memory and code for execution
