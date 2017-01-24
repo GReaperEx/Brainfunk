@@ -8,10 +8,12 @@ Available features up-to-date:
 * Option to wrap the pointer between bounds
 * Option to have dynamic tape length( ignores pointer wrap )
 * Option to compile instead of run, if possible
+* Optional memory initialization, data file
 
 Supported languages up-to-date:
 * Brainfuck
 * Extended Brainfuck
   * Type I
   * Type II
+  * Type III
 
