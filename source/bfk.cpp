@@ -27,7 +27,7 @@
 #include "CExtendedState.h"
 #include "CExtended2State.h"
 
-#define VERSION "0.3.0"
+#define VERSION "0.3.1"
 
 using namespace std;
 
@@ -87,17 +87,26 @@ int main(int argc, char* argv[])
             compile = true;
         } else if (temp == "-o") {
             if (i+1 < argc) {
+                if (output_file != "a.out") {
+                    cerr << "Warning: Output file was set more than once. Ignoring previous value." << endl;
+                }
                 output_file = argv[++i];
             } else {
                 cerr << "Error: Expected output file after \"-o\" option." << endl;
                 exit(-1);
             }
         } else if (strncmp(argv[i], "--output=", 9) == 0) {
+            if (output_file != "a.out") {
+                cerr << "Warning: Output file was set more than once. Ignoring previous value." << endl;
+            }
             if (!getline(stringstream(&argv[i][9]), output_file) || output_file.empty()) {
                 cerr << "Error: Expected output file after \"--output=\" option." << endl;
                 exit(-1);
             }
         } else {
+            if (!input_file.empty()) {
+                cerr << "Warning: Input file was set more than once. Ignoring previous value." << endl;
+            }
             input_file = temp;
         }
     }
