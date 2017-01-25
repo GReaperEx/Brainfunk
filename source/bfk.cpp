@@ -27,12 +27,13 @@
 #include "CExtendedState.h"
 #include "CExtended2State.h"
 #include "CExtended3State.h"
+#include "CLoveState.h"
 
-#define VERSION "0.3.5"
+#define VERSION "0.3.7"
 
 using namespace std;
 
-enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3 };
+enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3, LOVE };
 
 int main(int argc, char* argv[])
 {
@@ -61,8 +62,9 @@ int main(int argc, char* argv[])
             cout << "    --wrap-pointer   ; Confines the memory pointer between bounds" << endl;
             cout << "    --dynamic-tape   ; Makes the \'tape\' grow dynamically, without limit" << endl;
             cout << "    -x, --extended   ; Uses \'Extended Brainfuck Type I\' instead of vanilla" << endl;
-            cout << "    -x2, --extended2 ; User Extended Brainfuck Type II instead" << endl;
-            cout << "    -x3, --extended3 ; User Extended Brainfuck Type II instead" << endl;
+            cout << "    -x2, --extended2 ; Uses \'Extended Brainfuck Type II\' instead" << endl;
+            cout << "    -x3, --extended3 ; Uses \'Extended Brainfuck Type III\' instead" << endl;
+            cout << "    -l, --love       ; Uses \'Brainlove\' instead" << endl;
             cout << "    -c, --compile    ; Compiles BF code into native binary, if possible" << endl;
             cout << "    -o X, --output=X ; For compiling only (Default=\"a.out\")" << endl;
             cout << "    -d X, --data=X   ; Memory initialization data( ASCII file )" << endl;
@@ -89,6 +91,8 @@ int main(int argc, char* argv[])
             useVariant = EXTENDED2;
         } else if (temp == "-x3" || temp == "--extended3") {
             useVariant = EXTENDED3;
+        } else if (temp == "-l" || temp == "--love") {
+            useVariant = LOVE;
         } else if (temp == "-c" || temp == "--compile") {
             compile = true;
         } else if (temp == "-o") {
@@ -164,6 +168,9 @@ int main(int argc, char* argv[])
             if (wrapPtr) {
                 cerr << "Warning: Pointer wrap-around ignored." << endl;
             }
+        break;
+        case LOVE:
+            myBF = new CLoveState(cellSize, cellCount, wrapPtr, dynamic, dataFile);
         break;
         }
 
