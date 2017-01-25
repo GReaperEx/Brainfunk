@@ -18,4 +18,5 @@ Supported languages up-to-date:
   * Type III
 * Brainlove
 * Stacked Brainfuck
+* BCDFuck
 

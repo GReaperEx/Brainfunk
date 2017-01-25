@@ -29,12 +29,13 @@
 #include "CExtended3State.h"
 #include "CLoveState.h"
 #include "CStackedState.h"
+#include "CBCDState.h"
 
-#define VERSION "0.4.0"
+#define VERSION "0.4.1"
 
 using namespace std;
 
-enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3, LOVE, STACKED };
+enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3, LOVE, STACKED, BCD };
 
 int main(int argc, char* argv[])
 {
@@ -67,6 +68,7 @@ int main(int argc, char* argv[])
             cout << "    -x3, --extended3 ; Uses \'Extended Brainfuck Type III\' instead" << endl;
             cout << "    --love           ; Uses \'Brainlove\' instead" << endl;
             cout << "    --stacked        ; Uses \'Stacked Brainfuck\' instead" << endl;
+            cout << "    --bcd            ; Uses \'BCDFuck\' instead" << endl;
             cout << "    -c, --compile    ; Compiles BF code into native binary, if possible" << endl;
             cout << "    -o X, --output=X ; For compiling only (Default=\"a.out\")" << endl;
             cout << "    -d X, --data=X   ; Memory initialization data( ASCII file )" << endl;
@@ -97,6 +99,8 @@ int main(int argc, char* argv[])
             useVariant = LOVE;
         } else if (temp == "--stacked") {
             useVariant = STACKED;
+        } else if (temp == "--bcd") {
+            useVariant = BCD;
         } else if (temp == "-c" || temp == "--compile") {
             compile = true;
         } else if (temp == "-o") {
@@ -178,6 +182,12 @@ int main(int argc, char* argv[])
         break;
         case STACKED:
             myBF = new CStackedState(cellSize, cellCount, wrapPtr, dynamic, dataFile);
+        break;
+        case BCD:
+            myBF = new CBCDState(cellCount, wrapPtr, dynamic, dataFile);
+            if (cellSize != 1) {
+                cerr << "Warning: Custom cell size ignored. 8-bit supported only." << endl;
+            }
         break;
         }
 

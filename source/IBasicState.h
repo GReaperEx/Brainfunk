@@ -268,7 +268,7 @@ private:
                 if (ptrWrap) {
                     cellIndex %= cellCount;
                 } else {
-                    throw std::runtime_error("Pointer was incremented too much");
+                    throw std::runtime_error("Pointer was incremented too much.");
                 }
             }
         }

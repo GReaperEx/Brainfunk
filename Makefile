@@ -1,12 +1,15 @@
 CFLAGS=-O3 --std=gnu++11 -I "include/"
 LFLAGS=-s
 OBJD = obj
-OBJ = $(OBJD)/bfk.o $(OBJD)/CVanillaState.o $(OBJD)/CExtendedState.o $(OBJD)/CExtended2State.o $(OBJD)/CExtended3State.o $(OBJD)/CLoveState.o $(OBJD)/CStackedState.o
+OBJ = $(OBJD)/bfk.o $(OBJD)/CVanillaState.o $(OBJD)/CExtendedState.o $(OBJD)/CExtended2State.o $(OBJD)/CExtended3State.o $(OBJD)/CLoveState.o $(OBJD)/CStackedState.o $(OBJD)/CBCDState.o
 SRCD = source
 INSTALL_PATH=/usr/local
 
 bfk: $(OBJ) $(OBJD)
 	g++ $(LFLAGS) -o bfk $(OBJ)
+
+$(OBJD)/CBCDState.o: $(SRCD)/IBasicState.h $(SRCD)/CBCDState.h $(SRCD)/CBCDState.cpp
+	g++ $(CFLAGS) -c -o $(OBJD)/CBCDState.o $(SRCD)/CBCDState.cpp
 
 $(OBJD)/CStackedState.o: $(SRCD)/IBasicState.h $(SRCD)/CStackedState.h $(SRCD)/CStackedState.cpp
 	g++ $(CFLAGS) -c -o $(OBJD)/CStackedState.o $(SRCD)/CStackedState.cpp
