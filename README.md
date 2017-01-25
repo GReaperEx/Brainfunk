@@ -19,4 +19,5 @@ Supported languages up-to-date:
 * Brainlove
 * Stacked Brainfuck
 * BCDFuck
+* Brainstuck
 

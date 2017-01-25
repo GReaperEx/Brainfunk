@@ -30,12 +30,13 @@
 #include "CLoveState.h"
 #include "CStackedState.h"
 #include "CBCDState.h"
+#include "CStuckState.h"
 
-#define VERSION "0.4.1"
+#define VERSION "0.4.5"
 
 using namespace std;
 
-enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3, LOVE, STACKED, BCD };
+enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3, LOVE, STACKED, BCD, STUCK };
 
 int main(int argc, char* argv[])
 {
@@ -69,6 +70,7 @@ int main(int argc, char* argv[])
             cout << "    --love           ; Uses \'Brainlove\' instead" << endl;
             cout << "    --stacked        ; Uses \'Stacked Brainfuck\' instead" << endl;
             cout << "    --bcd            ; Uses \'BCDFuck\' instead" << endl;
+            cout << "    --stuck          ; Uses \'Brainstuck\' instead" << endl;
             cout << "    -c, --compile    ; Compiles BF code into native binary, if possible" << endl;
             cout << "    -o X, --output=X ; For compiling only (Default=\"a.out\")" << endl;
             cout << "    -d X, --data=X   ; Memory initialization data( ASCII file )" << endl;
@@ -101,6 +103,8 @@ int main(int argc, char* argv[])
             useVariant = STACKED;
         } else if (temp == "--bcd") {
             useVariant = BCD;
+        } else if (temp == "--stuck") {
+            useVariant = STUCK;
         } else if (temp == "-c" || temp == "--compile") {
             compile = true;
         } else if (temp == "-o") {
@@ -187,6 +191,12 @@ int main(int argc, char* argv[])
             myBF = new CBCDState(cellCount, wrapPtr, dynamic, dataFile);
             if (cellSize != 1) {
                 cerr << "Warning: Custom cell size ignored. 8-bit supported only." << endl;
+            }
+        break;
+        case STUCK:
+            myBF = new CStuckState(cellSize, cellCount, dynamic, dataFile);
+            if (wrapPtr) {
+                cerr << "Warning: Pointer wrap-around ignored." << endl;
             }
         break;
         }
