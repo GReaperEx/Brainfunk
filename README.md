@@ -16,4 +16,5 @@ Supported languages up-to-date:
   * Type I
   * Type II
   * Type III
+* Brainlove
 
