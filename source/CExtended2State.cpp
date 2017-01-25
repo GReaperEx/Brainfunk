@@ -54,13 +54,12 @@ void CExtended2State::translate(std::istream& input)
         setCell(curPtrPos++, temp);
     }
 
-    int initPtrPos = curPtrPos;
     //! Uses any data left to initialize the tape
-    curPtrPos = parseData(curPtrPos, input);
-    //! Appends data file to tape
-    stringstream data(initData);
-    parseData(curPtrPos, data);
-    curPtrPos = initPtrPos;
+    parseData(input);
+    //! Appends collected data to tape
+    for (unsigned i = 0; i < initData.size(); i++) {
+        setCell(curPtrPos + i, initData[i]);
+    }
 }
 
 void CExtended2State::run()

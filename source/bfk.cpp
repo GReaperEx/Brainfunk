@@ -28,12 +28,13 @@
 #include "CExtended2State.h"
 #include "CExtended3State.h"
 #include "CLoveState.h"
+#include "CStackedState.h"
 
-#define VERSION "0.3.7"
+#define VERSION "0.4.0"
 
 using namespace std;
 
-enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3, LOVE };
+enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3, LOVE, STACKED };
 
 int main(int argc, char* argv[])
 {
@@ -64,7 +65,8 @@ int main(int argc, char* argv[])
             cout << "    -x, --extended   ; Uses \'Extended Brainfuck Type I\' instead of vanilla" << endl;
             cout << "    -x2, --extended2 ; Uses \'Extended Brainfuck Type II\' instead" << endl;
             cout << "    -x3, --extended3 ; Uses \'Extended Brainfuck Type III\' instead" << endl;
-            cout << "    -l, --love       ; Uses \'Brainlove\' instead" << endl;
+            cout << "    --love           ; Uses \'Brainlove\' instead" << endl;
+            cout << "    --stacked        ; Uses \'Stacked Brainfuck\' instead" << endl;
             cout << "    -c, --compile    ; Compiles BF code into native binary, if possible" << endl;
             cout << "    -o X, --output=X ; For compiling only (Default=\"a.out\")" << endl;
             cout << "    -d X, --data=X   ; Memory initialization data( ASCII file )" << endl;
@@ -91,8 +93,10 @@ int main(int argc, char* argv[])
             useVariant = EXTENDED2;
         } else if (temp == "-x3" || temp == "--extended3") {
             useVariant = EXTENDED3;
-        } else if (temp == "-l" || temp == "--love") {
+        } else if (temp == "--love") {
             useVariant = LOVE;
+        } else if (temp == "--stacked") {
+            useVariant = STACKED;
         } else if (temp == "-c" || temp == "--compile") {
             compile = true;
         } else if (temp == "-o") {
@@ -171,6 +175,9 @@ int main(int argc, char* argv[])
         break;
         case LOVE:
             myBF = new CLoveState(cellSize, cellCount, wrapPtr, dynamic, dataFile);
+        break;
+        case STACKED:
+            myBF = new CStackedState(cellSize, cellCount, wrapPtr, dynamic, dataFile);
         break;
         }
 

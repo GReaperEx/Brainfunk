@@ -17,4 +17,5 @@ Supported languages up-to-date:
   * Type II
   * Type III
 * Brainlove
+* Stacked Brainfuck
 

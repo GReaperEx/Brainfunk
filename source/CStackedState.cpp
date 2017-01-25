@@ -14,25 +14,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "CVanillaState.h"
+#include "CStackedState.h"
 
 using namespace std;
 
-CVanillaState::CVanillaState(int size, int count, bool wrapPtr, bool dynamicTape, const string& dataFile)
+CStackedState::CStackedState(int size, int count, bool wrapPtr, bool dynamicTape, const string& dataFile)
 : IBasicState(size, count, wrapPtr, dynamicTape, dataFile), curPtrPos(0), IP(0)
 {}
 
-CVanillaState::~CVanillaState()
+CStackedState::~CStackedState()
 {}
 
-void CVanillaState::translate(istream& input)
+void CStackedState::translate(istream& input)
 {
     char c;
     int bracesCount = 0; //! Counter to check for unbalanced braces
 
     instructions.clear();
 
-    while (input.get(c)) {
+    while (input.get(c) && c != '!') {
         switch (c)
         {
         case '>':
@@ -48,6 +48,17 @@ void CVanillaState::translate(istream& input)
         break;
         case '.':
         case ',':
+        case '(':
+        case ')':
+        case '@':
+        case '$':
+        case '=':
+        case '_':
+        case '{':
+        case '}':
+        case '|':
+        case '^':
+        case '&':
             instructions.push_back(BFinstr(c));
         break;
         case '[':
@@ -63,14 +74,21 @@ void CVanillaState::translate(istream& input)
     if (bracesCount != 0) {
         throw runtime_error("Opening and closing braces don't match.");
     }
-
-    //! Appends collected data to tape
-    for (unsigned i = 0; i < initData.size(); i++) {
-        setCell(i, initData[i]);
+    //! Save any remaining data on the stack
+    if (c == '!') {
+        while (input.get(c)) {
+            CellType temp { 0 };
+            temp.c8 = c;
+            cellStack.push_back(temp);
+        }
+    }
+    //! It should ignore the last newline
+    if (!cellStack.empty() && cellStack.back().c8 == '\n') {
+        cellStack.pop_back();
     }
 }
 
-void CVanillaState::run()
+void CStackedState::run()
 {
     IP = 0;
     while (IP < instructions.size()) {
@@ -141,13 +159,97 @@ void CVanillaState::run()
                 }
             }
         break;
+        case '(':
+            if (!cellStack.empty()) {
+                setCell(curPtrPos, cellStack.back());
+                cellStack.pop_back();
+            } else {
+                CellType temp = { 0 };
+                setCell(curPtrPos, temp);
+            }
+        break;
+        case ')':
+            cellStack.push_back(getCell(curPtrPos));
+        break;
+        case '@':
+            if (!cellStack.empty()) {
+                setCell(curPtrPos, cellStack.back());
+            } else {
+                CellType temp = { 0 };
+                setCell(curPtrPos, temp);
+            }
+        break;
+        case '$':
+            if (!cellStack.empty()) {
+                cellStack.pop_back();
+            }
+        break;
+        case '=':
+            if (!cellStack.empty()) {
+                CellType temp1 = getCell(curPtrPos);
+                CellType temp2 = cellStack.back();
+                temp1.c64 += temp2.c64;
+                setCell(curPtrPos, temp1);
+            }
+        break;
+        case '_':
+            if (!cellStack.empty()) {
+                CellType temp1 = getCell(curPtrPos);
+                CellType temp2 = cellStack.back();
+                temp1.c64 -= temp2.c64;
+                setCell(curPtrPos, temp1);
+            }
+        break;
+        case '{':
+            if (!cellStack.empty()) {
+                CellType temp1 = getCell(curPtrPos);
+                CellType temp2 = cellStack.back();
+                temp1.c64 <<= temp2.c64;
+                setCell(curPtrPos, temp1);
+            }
+        break;
+        case '}':
+            if (!cellStack.empty()) {
+                CellType temp1 = getCell(curPtrPos);
+                CellType temp2 = cellStack.back();
+                temp1.c64 >>= temp2.c64;
+                setCell(curPtrPos, temp1);
+            }
+        break;
+        case '|':
+            if (!cellStack.empty()) {
+                CellType temp1 = getCell(curPtrPos);
+                CellType temp2 = cellStack.back();
+                temp1.c64 |= temp2.c64;
+                setCell(curPtrPos, temp1);
+            }
+        break;
+        case '^':
+            if (!cellStack.empty()) {
+                CellType temp1 = getCell(curPtrPos);
+                CellType temp2 = cellStack.back();
+                temp1.c64 ^= temp2.c64;
+                setCell(curPtrPos, temp1);
+            }
+        break;
+        case '&':
+            if (!cellStack.empty()) {
+                CellType temp1 = getCell(curPtrPos);
+                CellType temp2 = cellStack.back();
+                temp1.c64 += temp2.c64;
+                setCell(curPtrPos, temp1);
+            } else {
+                CellType temp = { 0 };
+                setCell(curPtrPos, temp);
+            }
+        break;
         }
 
         ++IP;
     }
 }
 
-void CVanillaState::compile(ostream& output)
+void CStackedState::compile(ostream& output)
 {
     output << "#include <stdio.h>" << endl;
     output << "#include <stdint.h>" << endl;
@@ -168,6 +270,36 @@ void CVanillaState::compile(ostream& output)
         output << "typedef uint64_t CellType;" << endl;
     break;
     }
+
+    output << "void* pushStack(CellType* p, int* size, int* index, CellType newVal) {" << endl;
+    output << "++*index;" << endl;
+    output << "if (*index == *size) {" << endl;
+    output << "p = realloc(p, (++*size)*sizeof(CellType));" << endl;
+    output << "if (!p) {" << endl;
+    output << "fputs(\"Out of memory!\\n\", stderr);" << endl;
+    output << "exit(-1);" << endl;
+    output << "}" << endl;
+    output << "}" << endl;
+    output << "((CellType*)p)[*index] = newVal;" << endl;
+    output << "return p;" << endl;
+    output << "}" << endl;
+
+    output << "CellType peekStack(CellType* p, int index) {" << endl;
+    output << "CellType toReturn = 0;" << endl;
+    output << "if (index >= 0) {" << endl;
+    output << "toReturn = p[index];" << endl;
+    output << "}" << endl;
+    output << "return toReturn;" << endl;
+    output << "}" << endl;
+
+    output << "CellType popStack(CellType* p, int* index) {" << endl;
+    output << "CellType toReturn = 0;" << endl;
+    output << "if (*index >= 0) {" << endl;
+    output << "toReturn = p[*index];" << endl;
+    output << "--*index;" << endl;
+    output << "}" << endl;
+    output << "return toReturn;" << endl;
+    output << "}" << endl;
 
     if (isDynamic()) {
         output << "void* incReallocPtr(void* p, int* size, int index) {" << endl;
@@ -196,19 +328,40 @@ void CVanillaState::compile(ostream& output)
         for (CellType cell : initData) {
             output << "0x" << hex << cell.c64 << ',';
         }
-        output << '\b' << " };" << endl;
+        output << " };" <<  endl;
+    }
+    if (!cellStack.empty()) {
+        output << "const CellType stackData[] = { ";
+        for (CellType cell : cellStack) {
+            output << "0x" << hex << cell.c64 << ',';
+        }
+        output << " };" << endl;
     }
 
     output << "int main() {" << endl;
-    output << "CellType p = calloc(" << max(getCellCount(), (int)initData.size()) << ", sizeof(CellType));" << endl;
+    output << "CellType* p = calloc(" << max(getCellCount(), (int)initData.size()) << ", sizeof(CellType));" << endl;
     output << "int index = 0;" << endl;
     output << "int size = " << max(getCellCount(), (int)initData.size()) << ';' << endl;
+
+    output << "CellType* pS = NULL;" << endl;
+    output << "int sIndex = -1;" << endl;
+    output << "int sSize = 0;" << endl;
+    output << "CellType temp;" << endl;
+
 
     if (!initData.empty()) {
         output << "{" << endl;
         output << "int i;" << endl;
-        output << "for (i = 0; i < sizeof(datArray)/sizeof(CellType); i++) {" << endl;
+        output << "for (i = 0; i < sizeof(datArray)/sizeof(datArray[0])); i++) {" << endl;
         output << "p[i] = datArray[i];" << endl;
+        output << "}" << endl;
+        output << "}" << endl;
+    }
+    if (!cellStack.empty()) {
+        output << "{" << endl;
+        output << "int i;" << endl;
+        output << "for (i = 0; i < sizeof(stackData)/sizeof(stackData[0]); i++) {" << endl;
+        output << "pS = pushStack(pS, &sSize, &sIndex, stackData[i]);" << endl;
         output << "}" << endl;
         output << "}" << endl;
     }
@@ -258,6 +411,46 @@ void CVanillaState::compile(ostream& output)
         break;
         case ']':
             output << "}" << endl;
+        break;
+        case '(':
+            output << "p[index] = popStack(pS, &sIndex);" << endl;
+        break;
+        case ')':
+            output << "pS = pushStack(pS, &sSize, &sIndex, p[index]);" << endl;
+        break;
+        case '@':
+            output << "p[index] = peekStack(pS, sIndex);" << endl;
+        break;
+        case '$':
+            output << "(void)popStack(pS, &sIndex);" << endl;
+        break;
+        case '=':
+            output << "temp = peekStack(pS, sIndex);" << endl;
+            output << "p[index] += temp;" << endl;
+        break;
+        case '_':
+            output << "temp = peekStack(pS, sIndex);" << endl;
+            output << "p[index] -= temp;" << endl;
+        break;
+        case '{':
+            output << "temp = peekStack(pS, sIndex);" << endl;
+            output << "p[index] <<= temp;" << endl;
+        break;
+        case '}':
+            output << "temp = peekStack(pS, sIndex);" << endl;
+            output << "p[index] >>= temp;" << endl;
+        break;
+        case '|':
+            output << "temp = peekStack(pS, sIndex);" << endl;
+            output << "p[index] |= temp;" << endl;
+        break;
+        case '^':
+            output << "temp = peekStack(pS, sIndex);" << endl;
+            output << "p[index] ^= temp;" << endl;
+        break;
+        case '&':
+            output << "temp = peekStack(pS, sIndex);" << endl;
+            output << "p[index] &= temp;" << endl;
         break;
         }
     }

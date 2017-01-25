@@ -20,7 +20,6 @@
 #include "IBasicState.h"
 
 #include <map>
-#include <vector>
 
 class CExtended3State : public IBasicState
 {

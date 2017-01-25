@@ -20,10 +20,7 @@ using namespace std;
 
 CExtendedState::CExtendedState(int size, const string& dataFile)
 : IBasicState(size, 10000, false, true, dataFile), curPtrPos(0), IP(0), storage({0})
-{
-    stringstream data(initData);
-    parseData(curPtrPos, data);
-}
+{}
 
 CExtendedState::~CExtendedState()
 {}
@@ -74,6 +71,11 @@ void CExtendedState::translate(istream& input)
     }
     if (bracesCount != 0) {
         throw runtime_error("Opening and closing braces don't match.");
+    }
+
+    //! Appends collected data to tape
+    for (unsigned i = 0; i < initData.size(); i++) {
+        setCell(i, initData[i]);
     }
 }
 
@@ -212,13 +214,29 @@ void CExtendedState::compile(ostream& output)
     output << "#include <stdint.h>" << endl;
     output << "#include <stdlib.h>" << endl;
 
+    switch (getCellSize())
+    {
+    case 1:
+        output << "typedef uint8_t CellType;" << endl;
+    break;
+    case 2:
+        output << "typedef uint16_t CellType;" << endl;
+    break;
+    case 4:
+        output << "typedef uint32_t CellType;" << endl;
+    break;
+    case 8:
+        output << "typedef uint64_t CellType;" << endl;
+    break;
+    }
+
     output << "void* incReallocPtr(void* p, int* size, int index) {" << endl;
-    output << "p = realloc(p, (index+1)*" << getCellSize() << ");" << endl;
+    output << "p = realloc(p, (index+1)*sizeof(CellType));" << endl;
     output << "if (!p) {" << endl;
     output << "fputs(\"Error: Out of memory!\\n\", stderr);" << endl;
     output << "exit(-1);" << endl;
     output << "}" << endl;
-    output << "memset((char*)p+*size*" << getCellSize() << ", 0, ((index+1)-*size)*" << getCellSize() << ");" << endl;
+    output << "memset((char*)p+*size*sizeof(CellType), 0, ((index+1)-*size)*sizeof(CellType));" << endl;
     output << "*size = index+1;" << endl;
     output << "return p;" << endl;
     output << "}" << endl;
@@ -228,53 +246,26 @@ void CExtendedState::compile(ostream& output)
     output << "exit(-1);" << endl;
     output << "}" << endl;
 
-    string tempData = escapeData();
     if (!initData.empty()) {
-        output << "const char datArray[] = \"'" << tempData << "\";" << endl;
+        output << "const CellType datArray[] = { ";
+        for (CellType cell : initData) {
+            output << "0x" << hex << cell.c64 << ',';
+        }
+        output << '\b' << " };" << endl;
     }
 
     output << "int main() {" << endl;
-    switch (getCellSize())
-    {
-    case 1:
-        output << "uint8_t* ";
-    break;
-    case 2:
-        output << "uint16_t* ";
-    break;
-    case 4:
-        output << "uint32_t* ";
-    break;
-    case 8:
-        output << "uint64_t* ";
-    break;
-    }
-    output << "p = calloc(" << max(getCellCount(), (int)tempData.size()) << ", " << getCellSize() << ");" << endl;
-    output << "int index = 0;" << endl;
-    output << "int size = " << max(getCellCount(), (int)tempData.size()) << ';' << endl;
-    tempData.clear();
 
-    switch (getCellSize())
-    {
-    case 1:
-        output << "uint8_t ";
-    break;
-    case 2:
-        output << "uint16_t ";
-    break;
-    case 4:
-        output << "uint32_t ";
-    break;
-    case 8:
-        output << "uint64_t ";
-    break;
-    }
-    output << "storage = 0;";
+    output << "CellType p = calloc(" << max(getCellCount(), (int)initData.size()) << ", sizeof(CellType));" << endl;
+    output << "int index = 0;" << endl;
+    output << "int size = " << max(getCellCount(), (int)initData.size()) << ';' << endl;
+
+    output << "CellType storage = 0;";
 
     if (!initData.empty()) {
         output << "{" << endl;
         output << "int i;" << endl;
-        output << "for (i = 0; i < sizeof(datArray)-1; i++) {" << endl;
+        output << "for (i = 0; i < sizeof(datArray)/sizeof(CellType); i++) {" << endl;
         output << "p[i] = datArray[i];" << endl;
         output << "}" << endl;
         output << "}" << endl;

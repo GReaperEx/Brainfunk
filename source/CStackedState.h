@@ -14,16 +14,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef CLOVE_STATE_H
-#define CLOVE_STATE_H
+#ifndef CSTACKED_STATE_H
+#define CSTACKED_STATE_H
 
 #include "IBasicState.h"
 
-class CLoveState : public IBasicState
+class CStackedState : public IBasicState
 {
 public:
-    CLoveState(int size, int count, bool wrapPtr, bool dynamicTape, const std::string& dataFile);
-    ~CLoveState();
+    CStackedState(int size, int count, bool wrapPtr, bool dynamicTape, const std::string& dataFile);
+    ~CStackedState();
 
     //! Converts BF code to manageable token blocks, compressed/optimized if possible
     void translate(std::istream& input);
@@ -36,7 +36,7 @@ private:
     int curPtrPos; //! Selected memory cell
     unsigned IP;   //! Interpretor only, pseudo Instruction Pointer
 
-    CellType storage; //! Extra storage cell required by Brainlove
+    std::vector<CellType> cellStack;
 
     struct BFinstr
     {
@@ -49,4 +49,4 @@ private:
     std::vector<BFinstr> instructions;
 };
 
-#endif // CLOVE_STATE_H
+#endif // CSTACKED_STATE_H

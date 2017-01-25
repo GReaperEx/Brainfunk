@@ -19,8 +19,6 @@
 
 #include "IBasicState.h"
 
-#include <vector>
-
 class CVanillaState : public IBasicState
 {
 public:

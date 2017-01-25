@@ -27,6 +27,7 @@
 
 #include <sstream>
 #include <iomanip>
+#include <vector>
 
 class IBasicState
 {
@@ -72,11 +73,7 @@ public:
                 throw std::runtime_error("Unable to open requested data file.");
             }
 
-            input.seekg(0, std::ios::end);
-            initData.reserve(input.tellg());
-            input.seekg(0, std::ios::beg);
-
-            initData.assign((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+            parseData(input);
         }
     }
 
@@ -159,8 +156,7 @@ protected:
 
     //! Understands escape sequences, symbol, octal and hex
     //! Only hex values can be > 255( technically, octal too but not for much )
-    int parseData(int startPos, std::istream& input) {
-        int curPos = startPos;
+    void parseData(std::istream& input) {
         char c;
 
         while (input.get(c)) {
@@ -238,65 +234,11 @@ protected:
             } else {
                 temp.c8 = c;
             }
-
-            setCell(curPos++, temp);
+            initData.push_back(temp);
         }
-        return curPos;
     }
 
-    //! Does the opposite of parseData()
-    const std::string escapeData() const {
-        std::string result = "";
-
-        for (auto it = initData.begin(); it < initData.end(); it++) {
-            char c = *it;
-            switch (c)
-                {
-                case '\a':
-                    result += "\\a";
-                break;
-                case '\b':
-                    result += "\\b";
-                break;
-                case '\f':
-                    result += "\\f";
-                break;
-                case '\n':
-                    result += "\\n";
-                break;
-                case '\r':
-                    result += "\\r";
-                break;
-                case '\t':
-                    result += "\\t";
-                break;
-                case '\v':
-                    result += "\\v";
-                break;
-                case '\\':
-                    result += "\\\\";
-                break;
-                case '\'':
-                    result += "\\\'";
-                break;
-                case '\"':
-                    result += "\\\"";
-                break;
-                default:
-                    if (!isprint(c)) {
-                        std::stringstream temp;
-                        temp << std::hex << (int)c;
-                        result += "\\x" + temp.str();
-                    } else {
-                        result += c;
-                    }
-                }
-        }
-
-        return result;
-    }
-
-    std::string initData;
+    std::vector<CellType> initData;
 
 private:
     void examineIndex(int& cellIndex) {
