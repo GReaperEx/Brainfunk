@@ -160,6 +160,7 @@ void CStuckState::compile(ostream& output)
     output << "#include <stdio.h>" << endl;
     output << "#include <stdint.h>" << endl;
     output << "#include <stdlib.h>" << endl;
+    output << "#include <string.h>" << endl;
 
     switch (getCellSize())
     {
@@ -177,27 +178,36 @@ void CStuckState::compile(ostream& output)
     break;
     }
 
-    if (isDynamic()) {
-        output << "void* incReallocPtr(void* p, int* size, int index) {" << endl;
-        output << "p = realloc(p, (index+1)*sizeof(CellType));" << endl;
-        output << "if (!p) {" << endl;
-        output << "fputs(\"Error: Out of memory!\\n\", stderr);" << endl;
-        output << "exit(-1);" << endl;
-        output << "}" << endl;
-        output << "memset((char*)p+*size*sizeof(CellType), 0, ((index+1)-*size)*sizeof(CellType));" << endl;
-        output << "*size = index+1;" << endl;
-        output << "return p;" << endl;
-        output << "}" << endl;
-    } else if (!wrapsPointer()) {
-        output << "void incError() {" << endl;
-        output << "fputs(\"Error: Tried to increment pointer beyond upper bound.\\n\", stderr);" << endl;
-        output << "exit(-1);" << endl;
-        output << "}" << endl;
-        output << "void decError() {" << endl;
-        output << "fputs(\"Error: Tried to decrement pointer beyond lower bound.\\n\", stderr);" << endl;
-        output << "exit(-1);" << endl;
-        output << "}" << endl;
-    }
+
+    output << "void* incReallocPtr(void* p, int* size, int index) {" << endl;
+    output << "p = realloc(p, (index+1)*sizeof(CellType));" << endl;
+    output << "if (!p) {" << endl;
+    output << "fputs(\"Error: Out of memory!\\n\", stderr);" << endl;
+    output << "exit(-1);" << endl;
+    output << "}" << endl;
+    output << "memset((char*)p+*size*sizeof(CellType), 0, ((index+1)-*size)*sizeof(CellType));" << endl;
+    output << "*size = index+1;" << endl;
+    output << "return p;" << endl;
+    output << "}" << endl;
+
+    output << "void decError() {" << endl;
+    output << "fputs(\"Error: Tried to decrement pointer beyond lower bound.\\n\", stderr);" << endl;
+    output << "exit(-1);" << endl;
+    output << "}" << endl;
+
+    output << "void pushStack(CellType** stack, int* size, int* index, CellType newVal) {" << endl;
+    output << "if (++*index >= *size) {" << endl;
+    output << "*stack = incReallocPtr(*stack, size, *index);" << endl;
+    output << "}" << endl;
+    output << "(*stack)[*index] = newVal;" << endl;
+    output << "}" << endl;
+
+    output << "CellType popStack(CellType* stack, int* size, int* index) {" << endl;
+    output << "if (*index < 0) {" << endl;
+    output << "decError();" << endl;
+    output << "}" << endl;
+    output << "return stack[(*index)--];" << endl;
+    output << "}" << endl;
 
     if (!initData.empty()) {
         output << "const CellType datArray[] = { ";
@@ -208,7 +218,7 @@ void CStuckState::compile(ostream& output)
     }
 
     output << "int main() {" << endl;
-    output << "CellType p = calloc(" << max(getCellCount(), (int)initData.size()) << ", sizeof(CellType));" << endl;
+    output << "CellType* p = calloc(" << max(getCellCount(), (int)initData.size()) << ", sizeof(CellType));" << endl;
     output << "int index = 0;" << endl;
     output << "int size = " << max(getCellCount(), (int)initData.size()) << ';' << endl;
 
@@ -225,30 +235,6 @@ void CStuckState::compile(ostream& output)
         int repeat = it->repeat;
         switch (it->token)
         {
-        case '>':
-            if (wrapsPointer()) {
-                output << "index = (index + " << repeat << ") % " << getCellCount() << ';' << endl;
-            } else {
-                output << "index += "<< repeat << ';' << endl;
-                output << "if (index >= size) {" << endl;
-                if (isDynamic()) {
-                    output << "p = incReallocPtr(p, &size, index);" << endl;
-                } else {
-                    output << "incError();" << endl;
-                }
-                output << "}" << endl;
-            }
-        break;
-        case '<':
-            output << "index -= " << repeat << ';' << endl;
-            output << "if (index < 0) {" << endl;
-            if (wrapsPointer()) {
-                output << "index = " << getCellCount() << " + index % " << getCellCount() << ';' << endl;
-            } else {
-                output << "decError();" << endl;
-            }
-            output << "}" << endl;
-        break;
         case '+':
             output << "p[index] += " << repeat << ';' << endl;
         break;
@@ -256,15 +242,24 @@ void CStuckState::compile(ostream& output)
             output << "p[index] -= " << repeat << ';' << endl;
         break;
         case '.':
-            output << "putchar(p[index]);" << endl;
+            output << "putchar(popStack(p, &size, &index));" << endl;
         break;
         case ',':
-            output << "p[index] = getchar();" << endl;
+            output << "pushStack(&p, &size, &index, getchar());" << endl;
         break;
         case '[':
-            output << "while (p[index]) {" << endl;
+            output << "while (popStack(p, &size, &index)) {" << endl;
         break;
         case ']':
+            output << "}" << endl;
+        break;
+        case '0':
+            output << "pushStack(&p, &size, &index, 0);" << endl;
+        break;
+        case ':':
+            output << "{" << endl;
+            output << "CellType temp = popStack(p, &size, &index)];" << endl;
+            output << "pushStack(&p, &size, &index, p[(uint32_t)(index - temp)]);" << endl;
             output << "}" << endl;
         break;
         }

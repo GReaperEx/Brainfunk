@@ -32,7 +32,7 @@
 #include "CBCDState.h"
 #include "CStuckState.h"
 
-#define VERSION "0.4.5"
+#define VERSION "0.4.6"
 
 using namespace std;
 

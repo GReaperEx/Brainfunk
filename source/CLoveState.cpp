@@ -259,7 +259,7 @@ void CLoveState::compile(ostream& output)
 
     output << "int main() {" << endl;
 
-    output << "CellType p = calloc(" << max(getCellCount(), (int)initData.size()) << ", sizeof(CellType));" << endl;
+    output << "CellType* p = calloc(" << max(getCellCount(), (int)initData.size()) << ", sizeof(CellType));" << endl;
     output << "int index = 0;" << endl;
     output << "int size = " << max(getCellCount(), (int)initData.size()) << ';' << endl;
 
