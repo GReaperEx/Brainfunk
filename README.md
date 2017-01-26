@@ -22,4 +22,5 @@ Supported languages up-to-date:
 * Brainstuck
 * JumpFuck
 * Brainfuck$
+* Self-modifying Brainfuck
 

@@ -33,12 +33,13 @@
 #include "CStuckState.h"
 #include "CJumpState.h"
 #include "CDollarState.h"
+#include "CSelfmodState.h"
 
-#define VERSION "0.5.1"
+#define VERSION "0.5.5"
 
 using namespace std;
 
-enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3, LOVE, STACKED, BCD, STUCK, JUMP, DOLLAR };
+enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3, LOVE, STACKED, BCD, STUCK, JUMP, DOLLAR, SELFMOD };
 
 int main(int argc, char* argv[])
 {
@@ -75,6 +76,7 @@ int main(int argc, char* argv[])
             cout << "    --bcd            ; Uses \'BCDFuck\' instead" << endl;
             cout << "    --stuck          ; Uses \'Brainstuck\' instead" << endl;
             cout << "    --dollar         ; Uses \'Brainfuck$\' instead" << endl;
+            cout << "    --self-mod       ; Uses \'Self-modifying Brainfuck\' instead" << endl;
             cout << "    -c, --compile    ; Compiles BF code into native binary, if possible" << endl;
             cout << "    -o X, --output=X ; For compiling only (Default=\"a.out\")" << endl;
             cout << "    -d X, --data=X   ; Memory initialization data( ASCII file )" << endl;
@@ -111,6 +113,8 @@ int main(int argc, char* argv[])
             useVariant = STUCK;
         } else if (temp == "--dollar") {
             useVariant = DOLLAR;
+        } else if (temp == "--self-mod") {
+            useVariant = SELFMOD;
         } else if (temp == "-j" || temp == "--jump") {
             useVariant = JUMP;
         } else if (temp == "-c" || temp == "--compile") {
@@ -215,6 +219,9 @@ int main(int argc, char* argv[])
         break;
         case DOLLAR:
             myBF = new CDollarState(cellSize, cellCount, wrapPtr, dynamic, dataFile);
+        break;
+        case SELFMOD:
+            myBF = new CSelfmodState(cellSize, cellCount, wrapPtr, dynamic, dataFile);
         break;
         }
 

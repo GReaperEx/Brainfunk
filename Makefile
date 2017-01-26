@@ -1,12 +1,15 @@
 CFLAGS=-O3 --std=gnu++11 -I "include/"
 LFLAGS=-s
 OBJD = obj
-OBJ = $(OBJD)/bfk.o $(OBJD)/CVanillaState.o $(OBJD)/CExtendedState.o $(OBJD)/CExtended2State.o $(OBJD)/CExtended3State.o $(OBJD)/CLoveState.o $(OBJD)/CStackedState.o $(OBJD)/CBCDState.o $(OBJD)/CStuckState.o $(OBJD)/CJumpState.o $(OBJD)/CDollarState.o
+OBJ = $(OBJD)/bfk.o $(OBJD)/CVanillaState.o $(OBJD)/CExtendedState.o $(OBJD)/CExtended2State.o $(OBJD)/CExtended3State.o $(OBJD)/CLoveState.o $(OBJD)/CStackedState.o $(OBJD)/CBCDState.o $(OBJD)/CStuckState.o $(OBJD)/CJumpState.o $(OBJD)/CDollarState.o $(OBJD)/CSelfmodState.o
 SRCD = source
 INSTALL_PATH=/usr/local
 
 bfk: $(OBJ) $(OBJD)
 	g++ $(LFLAGS) -o bfk $(OBJ)
+
+$(OBJD)/CSelfmodState.o: $(SRCD)/IBasicState.h $(SRCD)/CSelfmodState.h $(SRCD)/CSelfmodState.cpp
+	g++ $(CFLAGS) -c -o $(OBJD)/CSelfmodState.o $(SRCD)/CSelfmodState.cpp
 
 $(OBJD)/CDollarState.o: $(SRCD)/IBasicState.h $(SRCD)/CDollarState.h $(SRCD)/CDollarState.cpp
 	g++ $(CFLAGS) -c -o $(OBJD)/CDollarState.o $(SRCD)/CDollarState.cpp
