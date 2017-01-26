@@ -32,12 +32,13 @@
 #include "CBCDState.h"
 #include "CStuckState.h"
 #include "CJumpState.h"
+#include "CDollarState.h"
 
-#define VERSION "0.4.8"
+#define VERSION "0.5.1"
 
 using namespace std;
 
-enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3, LOVE, STACKED, BCD, STUCK, JUMP };
+enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3, LOVE, STACKED, BCD, STUCK, JUMP, DOLLAR };
 
 int main(int argc, char* argv[])
 {
@@ -73,6 +74,7 @@ int main(int argc, char* argv[])
             cout << "    --stacked        ; Uses \'Stacked Brainfuck\' instead" << endl;
             cout << "    --bcd            ; Uses \'BCDFuck\' instead" << endl;
             cout << "    --stuck          ; Uses \'Brainstuck\' instead" << endl;
+            cout << "    --dollar         ; Uses \'Brainfuck$\' instead" << endl;
             cout << "    -c, --compile    ; Compiles BF code into native binary, if possible" << endl;
             cout << "    -o X, --output=X ; For compiling only (Default=\"a.out\")" << endl;
             cout << "    -d X, --data=X   ; Memory initialization data( ASCII file )" << endl;
@@ -107,6 +109,8 @@ int main(int argc, char* argv[])
             useVariant = BCD;
         } else if (temp == "--stuck") {
             useVariant = STUCK;
+        } else if (temp == "--dollar") {
+            useVariant = DOLLAR;
         } else if (temp == "-j" || temp == "--jump") {
             useVariant = JUMP;
         } else if (temp == "-c" || temp == "--compile") {
@@ -208,6 +212,9 @@ int main(int argc, char* argv[])
             if (wrapPtr) {
                 cerr << "Warning: Pointer wrap-around ignored." << endl;
             }
+        break;
+        case DOLLAR:
+            myBF = new CDollarState(cellSize, cellCount, wrapPtr, dynamic, dataFile);
         break;
         }
 
