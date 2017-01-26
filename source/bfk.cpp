@@ -31,12 +31,13 @@
 #include "CStackedState.h"
 #include "CBCDState.h"
 #include "CStuckState.h"
+#include "CJumpState.h"
 
-#define VERSION "0.4.6"
+#define VERSION "0.4.8"
 
 using namespace std;
 
-enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3, LOVE, STACKED, BCD, STUCK };
+enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3, LOVE, STACKED, BCD, STUCK, JUMP };
 
 int main(int argc, char* argv[])
 {
@@ -67,6 +68,7 @@ int main(int argc, char* argv[])
             cout << "    -x, --extended   ; Uses \'Extended Brainfuck Type I\' instead of vanilla" << endl;
             cout << "    -x2, --extended2 ; Uses \'Extended Brainfuck Type II\' instead" << endl;
             cout << "    -x3, --extended3 ; Uses \'Extended Brainfuck Type III\' instead" << endl;
+            cout << "    -j, --jump       ; Uses \'JumpFuck\' instead" << endl;
             cout << "    --love           ; Uses \'Brainlove\' instead" << endl;
             cout << "    --stacked        ; Uses \'Stacked Brainfuck\' instead" << endl;
             cout << "    --bcd            ; Uses \'BCDFuck\' instead" << endl;
@@ -105,6 +107,8 @@ int main(int argc, char* argv[])
             useVariant = BCD;
         } else if (temp == "--stuck") {
             useVariant = STUCK;
+        } else if (temp == "-j" || temp == "--jump") {
+            useVariant = JUMP;
         } else if (temp == "-c" || temp == "--compile") {
             compile = true;
         } else if (temp == "-o") {
@@ -195,6 +199,12 @@ int main(int argc, char* argv[])
         break;
         case STUCK:
             myBF = new CStuckState(cellSize, cellCount, dynamic, dataFile);
+            if (wrapPtr) {
+                cerr << "Warning: Pointer wrap-around ignored." << endl;
+            }
+        break;
+        case JUMP:
+            myBF = new CJumpState(cellSize, dataFile);
             if (wrapPtr) {
                 cerr << "Warning: Pointer wrap-around ignored." << endl;
             }

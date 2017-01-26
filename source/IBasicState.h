@@ -92,6 +92,10 @@ protected:
         uint16_t c16;
         uint32_t c32;
         uint64_t c64;
+
+        bool operator< (const CellType& other) const{
+            return c64 < other.c64;
+        }
     };
 
     int getCellSize() const {

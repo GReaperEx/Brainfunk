@@ -1,12 +1,15 @@
 CFLAGS=-O3 --std=gnu++11 -I "include/"
 LFLAGS=-s
 OBJD = obj
-OBJ = $(OBJD)/bfk.o $(OBJD)/CVanillaState.o $(OBJD)/CExtendedState.o $(OBJD)/CExtended2State.o $(OBJD)/CExtended3State.o $(OBJD)/CLoveState.o $(OBJD)/CStackedState.o $(OBJD)/CBCDState.o $(OBJD)/CStuckState.o
+OBJ = $(OBJD)/bfk.o $(OBJD)/CVanillaState.o $(OBJD)/CExtendedState.o $(OBJD)/CExtended2State.o $(OBJD)/CExtended3State.o $(OBJD)/CLoveState.o $(OBJD)/CStackedState.o $(OBJD)/CBCDState.o $(OBJD)/CStuckState.o $(OBJD)/CJumpState.o
 SRCD = source
 INSTALL_PATH=/usr/local
 
 bfk: $(OBJ) $(OBJD)
 	g++ $(LFLAGS) -o bfk $(OBJ)
+
+$(OBJD)/CJumpState.o: $(SRCD)/IBasicState.h $(SRCD)/CJumpState.h $(SRCD)/CJumpState.cpp
+	g++ $(CFLAGS) -c -o $(OBJD)/CJumpState.o $(SRCD)/CJumpState.cpp
 
 $(OBJD)/CStuckState.o: $(SRCD)/IBasicState.h $(SRCD)/CStuckState.h $(SRCD)/CStuckState.cpp
 	g++ $(CFLAGS) -c -o $(OBJD)/CStuckState.o $(SRCD)/CStuckState.cpp
@@ -41,7 +44,7 @@ $(OBJD):
 .PHONY: clean install
 
 clean:
-	rm -f bfk
+	rm -f bfk $(OBJ)
 
 install: bfk
 	install -m 0755 bfk $(INSTALL_PATH)/bin/

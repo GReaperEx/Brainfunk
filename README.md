@@ -20,4 +20,5 @@ Supported languages up-to-date:
 * Stacked Brainfuck
 * BCDFuck
 * Brainstuck
+* JumpFuck
 
