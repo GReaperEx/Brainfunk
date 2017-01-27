@@ -219,6 +219,7 @@ void CDollarState::compile(ostream& output)
     output << "#include <stdint.h>" << endl;
     output << "#include <stdlib.h>" << endl;
     output << "#include <inttypes.h>" << endl;
+    output << "#include <string.h>" << endl;
 
     switch (getCellSize())
     {
@@ -277,7 +278,8 @@ void CDollarState::compile(ostream& output)
         output << "*size = index+1;" << endl;
         output << "return p;" << endl;
         output << "}" << endl;
-    } else if (!wrapsPointer()) {
+    }
+    if (!wrapsPointer()) {
         output << "void incError() {" << endl;
         output << "fputs(\"Error: Tried to increment pointer beyond upper bound.\\n\", stderr);" << endl;
         output << "exit(-1);" << endl;
