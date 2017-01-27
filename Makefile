@@ -5,47 +5,52 @@ SRC = $(wildcard $(SRCD)/*.cpp)
 OBJD = obj
 OBJ = $(patsubst $(SRCD)/%.cpp,$(OBJD)/%.o,$(SRC))
 TSTD = tests
-TST = $(patsubst %.bf,%,$(wildcard $(TSTD)/*.bf))
 INSTALL_PATH=/usr/local
 
 bfk: $(OBJ) $(OBJD)
-	g++ $(LFLAGS) -o bfk $(OBJ)
+	@echo Linking: $@
+	@g++ $(LFLAGS) -o bfk $(OBJ)
 
-$(OBJD)/bfk.o: $(SRCD)/*.h $(SRCD)/bfk.cpp
-	g++ $(CFLAGS) -c -o $(OBJD)/bfk.o $(SRCD)/bfk.cpp
+$(OBJD)/bfk.o: $(SRCD)/bfk.cpp $(SRCD)/*.h
+	@echo Compiling: $(<F)
+	@g++ $(CFLAGS) -c -o $(OBJD)/bfk.o $(SRCD)/bfk.cpp
 
 $(OBJD)/%.o: $(SRCD)/%.cpp $(SRCD)/%.h $(SRCD)/IBasicState.h
-	g++ $(CFLAGS) -c -o $@ $<
+	@echo Compiling: $(<F)
+	@g++ $(CFLAGS) -c -o $@ $<
 
 $(OBJD):
-	mkdir $(OBJD)
+	@mkdir $(OBJD)
 
-.PHONY: clean install remove test help
+.PHONY: clean clean-test install remove test re-test help
 
 clean:
-	rm -f bfk $(OBJD)/*.o $(TSTD)/*.out a.out
+	@rm -f bfk $(OBJD)/*.o $(TSTD)/*.out $(TSTD)/*.exe
+
+clean-test:
+	@rm -f $(TSTD)/*.out $(TSTD)/*.exe
 
 install: bfk
-	install -m 0755 bfk $(INSTALL_PATH)/bin/
+	@install -m 0755 bfk $(INSTALL_PATH)/bin/
 
 remove:
-	rm -fv $(INSTALL_PATH)/bin/bfk
+	@rm -fv $(INSTALL_PATH)/bin/bfk
 
 test: bfk
-	@for testfile in $(TST); do \
-		echo Testing: $$(basename "$$testfile"); \
-		./bfk $$(cat $$testfile'.use') $$testfile'.bf' < $$testfile'.in' > $$testfile'.out' && sync && \
-		diff $$testfile'.val' $$testfile'.out'; \
-		echo Testing: $$(basename "$$testfile")'-c'; \
-		./bfk -c $$(cat $$testfile'.use') $$testfile'.bf' || continue; \
-		sync && ./a.out < $$testfile'.in' > $$testfile'.out' && sync && \
-		diff $$testfile'.val' $$testfile'.out'; \
-	done
+	@sync bfk
+	@$(MAKE) --silent -C $(TSTD)/
+
+re-test:
+	@$(MAKE) --silent clean-test
+	@$(MAKE) --silent test
 
 help:
-	@echo "make        : "
-	@echo "make bfk    : Compiles the program"
-	@echo "make test   : Compiles the program and runs tests"
-	@echo "make install: Compiles the program and installs it on the system"
-	@echo "make remove : Uninstalls the program"
-	@echo "make clean  : Erases any compilation or testing generated files"
+	@echo "make            : Compiled the program"
+	@echo "make bfk        : Compiles the program"
+	@echo "make test       : Compiles the program and runs tests"
+	@echo "make re-test    : Compiles the program and re-runs tests"
+	@echo "make install    : Compiles the program and installs it on the system"
+	@echo "make remove     : Uninstalls the program"
+	@echo "make clean      : Erases any compilation or testing generated files"
+	@echo "make clean-test : Erases only testing generated files"
+
