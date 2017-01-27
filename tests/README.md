@@ -1,4 +1,4 @@
-#Creating unit-tests for Brainfunk
+#Creating tests for Brainfunk
 
 Simple testing system, but hey, it works. 
 
