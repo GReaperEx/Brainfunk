@@ -24,11 +24,11 @@ $(OBJD):
 
 .PHONY: clean clean-test install remove test re-test help
 
-clean:
-	@rm -f bfk $(OBJD)/*.o $(TSTD)/*.out $(TSTD)/*.exe
+clean: clean-test
+	@rm -f bfk $(OBJD)/*.o
 
 clean-test:
-	@rm -f $(TSTD)/*.out $(TSTD)/*.exe
+	@$(MAKE) --silent -C $(TSTD)/ clean
 
 install: bfk
 	@install -m 0755 bfk $(INSTALL_PATH)/bin/

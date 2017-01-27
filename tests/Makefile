@@ -1,9 +1,13 @@
 SRCS := $(shell find ./ -name '*.bf')
 OBJS := $(SRCS:.bf=.out)
 
-.PHONY: test
+.PHONY: test clean
 
 test: $(OBJS)
+	echo Finished testing.
+
+clean:
+	rm -f $(OBJS) $(OBJS:.c.out=.exe)
 
 %.c.out: %.c.bf %.in %.use %.val
 	echo Testing: $(*F)'-c'
