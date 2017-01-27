@@ -3,12 +3,16 @@
 Simple testing system, but hey, it works. 
 
 ##Required files
+| Extension | Usefulness |
+| --- | --- |
 | *.bf  | Contains the Brainfuck code you want to test |
 | *.in  | Any desired input should go here |
 | *.val | Contains valid/ideal output. Beware of extra newlines! |
 | *.use | All the cmd-line arguments it should pass to bfk |
 
 ##Generated files:
+| Extension | Usefulness |
+| --- | --- |
 | *.out    | Contains the actual output of a script |
 | ../a.out | Temporary executable to test compilation |
 
