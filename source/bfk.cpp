@@ -250,7 +250,8 @@ int main(int argc, char* argv[])
         }
     } catch (exception& e) {
         cerr << "Error: " << e.what() << endl;
+        return EXIT_FAILURE;
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }
