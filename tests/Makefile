@@ -1,9 +1,12 @@
+SRCS := $(shell find ./ -name '*.bf')
+OBJS := $(SRCS:.bf=.out)
+
 .PHONY: test
 
-test: $(patsubst %.bf,%.out,$(wildcard *.bf))
+test: $(OBJS)
 
 %.c.out: %.c.bf %.in %.use %.val
-	echo Testing: $*'-c'
+	echo Testing: $(*F)'-c'
 	../bfk -c $(cat $*'.use') $< > /dev/null -o $*'.exe' && \
 	sync $*'.exe' && \
 	./$*'.exe' < $*'.in' > $@ && \
@@ -11,7 +14,7 @@ test: $(patsubst %.bf,%.out,$(wildcard *.bf))
 	diff  $*'.val' $@
 
 %.out: %.bf %.in %.use %.val
-	echo Testing: $*
+	echo Testing: $(*F)
 	../bfk $(cat $*'.use') $*'.bf' < $*'.in' > $*'.out' && \
 	sync $@ && \
 	diff  $*'.val' $@

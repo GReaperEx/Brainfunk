@@ -1,6 +1,8 @@
 #Creating tests for Brainfunk
 
-Simple testing system, but hey, it works. 
+Simple testing system, but hey, it works.
+
+Each testcase should have its own directory, everything looks cleaner that way.
 
 ##Required files
 | Extension | Usefulness |
