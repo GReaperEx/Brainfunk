@@ -16,3 +16,9 @@ test: $(patsubst %.bf,%.out,$(wildcard *.bf))
 	sync $@ && \
 	diff  $*'.val' $@
 
+%.in:
+	touch $@
+
+%.use:
+	touch $@
+
