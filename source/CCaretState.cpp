@@ -270,7 +270,7 @@ void CCaretState::compile(ostream& output)
         }
     }
     output << "}" << endl;
-    output << "return (p + index);" << endl;
+    output << "return (*p + index);" << endl;
     output << "}" << endl;
 
     if (!initData.empty()) {
