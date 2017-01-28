@@ -23,4 +23,5 @@ Supported languages up-to-date:
 * JumpFuck
 * Brainfuck$
 * Self-modifying Brainfuck
+* Brainfuck^
 
