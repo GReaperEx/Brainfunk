@@ -58,6 +58,8 @@ int main(int argc, char* argv[])
     string input_file = "";
     string dataFile = "";
 
+    bool useStdin = false;
+
     for (int i = 1; i < argc; i++) {
         string temp(argv[i]);
         if (temp == "-h" || temp == "--help") {
@@ -89,6 +91,7 @@ int main(int argc, char* argv[])
             cout << "    -c, --compile    ; Compiles BF code into native binary, if possible" << endl;
             cout << "    -o X, --output=X ; For compiling only (Default=\"a.out\")" << endl;
             cout << "    -d X, --data=X   ; Memory initialization data( ASCII file )" << endl;
+            cout << "    --stdin          ; Take code input from standard input instead" << endl;
             exit(0);
         } else if (temp == "-v" || temp == "--version") {
             cout << "Copyright (C) 2017, GReaperEx(Marios F.)" << endl;
@@ -181,8 +184,15 @@ int main(int argc, char* argv[])
                 cerr << "Error: Expected data file after \"--data=\" option." << endl;
                 exit(-1);
             }
-        } else {
+        } else if (temp == "--stdin") {
+            useStdin = true;
             if (!input_file.empty()) {
+                cerr << "Warning: Input file will be ignored, set to read from stdin." << endl;
+            }
+        } else {
+            if (useStdin) {
+                cerr << "Warning: Input file will be ignored, set to read from stdin." << endl;
+            } else if (!input_file.empty()) {
                 cerr << "Warning: Input file was set more than once. Ignoring previous value." << endl;
             }
             input_file = temp;
@@ -190,10 +200,6 @@ int main(int argc, char* argv[])
     }
 
     try {
-        if (input_file.empty()) {
-            throw runtime_error("No input file was given.");
-        }
-
         IBasicState* myBF;
 
         switch (useVariant)
@@ -254,12 +260,18 @@ int main(int argc, char* argv[])
         break;
         }
 
-        ifstream inputStream(input_file);
-        if (!inputStream.is_open()) {
-            throw runtime_error("Unable to open "+input_file+" for reading.");
+        if (useStdin) {
+            myBF->translate(cin);
+        } else {
+            if (input_file.empty()) {
+                throw runtime_error("No input file was given.");
+            }
+            ifstream inputStream(input_file);
+            if (!inputStream.is_open()) {
+                throw runtime_error("Unable to open "+input_file+" for reading.");
+            }
+            myBF->translate(inputStream);
         }
-        myBF->translate(inputStream);
-        inputStream.close();
 
         if (compile) {
             string tempFile = output_file+".c";
