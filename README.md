@@ -9,6 +9,7 @@ Available features up-to-date:
 * Option to have dynamic tape length( ignores pointer wrap )
 * Option to compile instead of run, if possible
 * Optional memory initialization, data file
+* Action on EOF is configurable( -1, 0, nop or abort )
 
 Supported languages up-to-date:
 * Brainfuck

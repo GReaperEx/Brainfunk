@@ -24,7 +24,7 @@
 class CJumpState : public IBasicState
 {
 public:
-    CJumpState(int size, const std::string& dataFile);
+    CJumpState(int size, ActionOnEOF onEOF, const std::string& dataFile);
     ~CJumpState();
 
     //! Converts BF code to manageable token blocks, compressed/optimized if possible

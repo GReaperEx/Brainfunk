@@ -18,8 +18,8 @@
 
 using namespace std;
 
-CStuckState::CStuckState(int size, int count, bool dynamicTape, const string& dataFile)
-: IBasicState(size, count, false, dynamicTape, dataFile), curPtrPos(0), IP(0)
+CStuckState::CStuckState(int size, int count, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile)
+: IBasicState(size, count, false, dynamicTape, onEOF, dataFile), curPtrPos(0), IP(0)
 {}
 
 CStuckState::~CStuckState()
@@ -98,11 +98,11 @@ void CStuckState::run()
         break;
         case ',':
         {
-            int c = cin.get();
             CellType temp = { 0 };
 
-            temp.c8 = (char)c;
-            setCell(++curPtrPos, temp);
+            if (userInput(temp.c8)) {
+                setCell(++curPtrPos, temp);
+            }
         }
         break;
         case '0':
@@ -178,7 +178,6 @@ void CStuckState::compile(ostream& output)
     break;
     }
 
-
     output << "void* incReallocPtr(void* p, int* size, int index) {" << endl;
     output << "p = realloc(p, (index+1)*sizeof(CellType));" << endl;
     output << "if (!p) {" << endl;
@@ -207,6 +206,29 @@ void CStuckState::compile(ostream& output)
     output << "decError();" << endl;
     output << "}" << endl;
     output << "return stack[(*index)--];" << endl;
+    output << "}" << endl;
+
+    output << "void getInput(CellType* dst) {" << endl;
+    output << "int temp = getchar();" << endl;
+    output << "if (temp == EOF) {" << endl;
+    switch (getEOFpolicy())
+    {
+    case RETM1:
+        output << "*dst = -1;" << endl;
+    break;
+    case RET0:
+        output << "*dst = 0;" << endl;
+    break;
+    case NOP:
+    break;
+    case ABORT:
+        output << "fputs(\"Error: Encountered EOF while processing input.\", stderr);" << endl;
+        output << "exit(-1);" << endl;
+    break;
+    }
+    output << "} else {" << endl;
+    output << "*dst = (CellType)temp;" << endl;
+    output << "}" << endl;
     output << "}" << endl;
 
     if (!initData.empty()) {
@@ -245,7 +267,17 @@ void CStuckState::compile(ostream& output)
             output << "putchar(popStack(p, &size, &index));" << endl;
         break;
         case ',':
+            if (getEOFpolicy() == NOP) {
+                output << "{" << endl;
+                output << "CellType tempC = 1;" << endl;
+                output << "getInput(&tempC);" << endl;
+                output << "if (tempC != 1) {" << endl;
+            }
             output << "pushStack(&p, &size, &index, getchar());" << endl;
+            if (getEOFpolicy() == NOP) {
+                output << "}" << endl;
+                output << "}" << endl;
+            }
         break;
         case '[':
             output << "while (popStack(p, &size, &index)) {" << endl;

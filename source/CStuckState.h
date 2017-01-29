@@ -22,7 +22,7 @@
 class CStuckState : public IBasicState
 {
 public:
-    CStuckState(int size, int count, bool dynamicTape, const std::string& dataFile);
+    CStuckState(int size, int count, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile);
     ~CStuckState();
 
     //! Converts BF code to manageable token blocks, compressed/optimized if possible

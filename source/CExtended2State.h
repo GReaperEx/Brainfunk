@@ -22,7 +22,7 @@
 class CExtended2State : public IBasicState
 {
 public:
-    CExtended2State(int size, const std::string& dataFile);
+    CExtended2State(int size, ActionOnEOF onEOF, const std::string& dataFile);
     ~CExtended2State();
 
     //! Prepares memory and code for execution

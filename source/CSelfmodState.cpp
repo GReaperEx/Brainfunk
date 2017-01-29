@@ -18,8 +18,8 @@
 
 using namespace std;
 
-CSelfmodState::CSelfmodState(int size, int count, bool wrapPtr, bool dynamicTape, const string& dataFile)
-: IBasicState(size, count, wrapPtr, dynamicTape, dataFile), curPtrPos(0), IP(0)
+CSelfmodState::CSelfmodState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile)
+: IBasicState(size, count, wrapPtr, dynamicTape, onEOF, dataFile), curPtrPos(0), IP(0)
 {}
 
 CSelfmodState::~CSelfmodState()
@@ -94,10 +94,8 @@ void CSelfmodState::run()
         break;
         case ',':
         {
-            int c = cin.get();
-            CellType temp = { 0 };
-
-            temp.c8 = (char)c;
+            CellType temp = getCell(curPtrPos);
+            userInput(temp.c8);
             setCell(curPtrPos, temp);
         }
         break;

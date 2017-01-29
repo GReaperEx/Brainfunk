@@ -22,7 +22,7 @@
 class CBCDState : public IBasicState
 {
 public:
-    CBCDState(int count, bool wrapPtr, bool dynamicTape, const std::string& dataFile);
+    CBCDState(int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile);
     ~CBCDState();
 
     //! Converts BF code to manageable token blocks, compressed/optimized if possible
@@ -53,17 +53,17 @@ private:
     uint8_t bufOutput;
     bool isOutputBuf;
 
-    uint8_t getInput() {
+    void getInput(uint8_t& c) {
         if (!isInputBuf) {
-            bufInput = std::cin.get();
+            userInput(bufInput);
         }
 
         if (!isInputBuf) {
             isInputBuf = true;
-            return bufInput >> 4;
+            c = bufInput >> 4;
         }
         isInputBuf = false;
-        return bufInput & 0xF;
+        c = bufInput & 0xF;
     }
 
     void showOutput(uint8_t nibble) {

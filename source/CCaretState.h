@@ -22,7 +22,7 @@
 class CCaretState : public IBasicState
 {
 public:
-    CCaretState(int size, int count, bool wrapPtr, bool dynamicTape, const std::string& dataFile);
+    CCaretState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile);
     ~CCaretState();
 
     //! Converts BF code to manageable token blocks, compressed/optimized if possible

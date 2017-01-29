@@ -22,7 +22,7 @@
 class CSelfmodState : public IBasicState
 {
 public:
-    CSelfmodState(int size, int count, bool wrapPtr, bool dynamicTape, const std::string& dataFile);
+    CSelfmodState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile);
     ~CSelfmodState();
 
     //! Prepares code to be run

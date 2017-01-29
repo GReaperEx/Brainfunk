@@ -18,8 +18,8 @@
 
 using namespace std;
 
-CJumpState::CJumpState(int size, const string& dataFile)
-: IBasicState(size, 10000, false, true, dataFile), curPtrPos(0), IP(0)
+CJumpState::CJumpState(int size, ActionOnEOF onEOF, const string& dataFile)
+: IBasicState(size, 10000, false, true, onEOF, dataFile), curPtrPos(0), IP(0)
 {}
 
 CJumpState::~CJumpState()
@@ -106,10 +106,8 @@ void CJumpState::run()
         break;
         case ',':
         {
-            int c = cin.get();
-            CellType temp = { 0 };
-
-            temp.c8 = (char)c;
+            CellType temp = getCell(curPtrPos);
+            userInput(temp.c8);
             setCell(curPtrPos, temp);
         }
         break;

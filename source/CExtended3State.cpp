@@ -20,8 +20,8 @@
 
 using namespace std;
 
-CExtended3State::CExtended3State(int size, const string& dataFile)
-: IBasicState(size, 10000, false, true, dataFile), curPtrPos(0), IP(1), storagePos(0)
+CExtended3State::CExtended3State(int size, ActionOnEOF onEOF, const std::string& dataFile)
+: IBasicState(size, 10000, false, true, onEOF, dataFile), curPtrPos(0), IP(1), storagePos(0)
 {}
 
 CExtended3State::~CExtended3State()
@@ -99,8 +99,8 @@ void CExtended3State::run()
         break;
         case ',':
         {
-            CellType temp = { 0 };
-            temp.c8 = cin.get();
+            CellType temp = getCell(curPtrPos);
+            userInput(temp.c8);
             if (!isLocked(curPtrPos)) {
                 setCell(curPtrPos, temp);
             }

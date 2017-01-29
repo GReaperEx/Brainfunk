@@ -51,6 +51,7 @@ int main(int argc, char* argv[])
     bool dynamic = false;
 
     LangVariants useVariant = VANILLA;
+    IBasicState::ActionOnEOF onEOF = IBasicState::RETM1;
 
     bool compile = false;
     string output_file = "a.out";
@@ -69,6 +70,11 @@ int main(int argc, char* argv[])
             cout << "    --cell-count=X   ; Sets amount of available cells (Default=32768)" << endl;
             cout << "    --wrap-pointer   ; Confines the memory pointer between bounds" << endl;
             cout << "    --dynamic-tape   ; Makes the \'tape\' grow dynamically, without limit" << endl;
+            cout << "    --on-eof=<act>   ; Changes the default behavior when managing EOF" << endl;
+            cout << "        -1           ; Returns -1 to the program (Default)" << endl;
+            cout << "        0            ; Returns 0 to the program" << endl;
+            cout << "        nop          ; Simply ignores the command" << endl;
+            cout << "        abort        ; Quits execution with an error message" << endl;
             cout << "    -x, --extended   ; Uses \'Extended Brainfuck Type I\' instead of vanilla" << endl;
             cout << "    -x2, --extended2 ; Uses \'Extended Brainfuck Type II\' instead" << endl;
             cout << "    -x3, --extended3 ; Uses \'Extended Brainfuck Type III\' instead" << endl;
@@ -100,6 +106,21 @@ int main(int argc, char* argv[])
             wrapPtr = true;
         } else if (temp == "--dynamic-tape") {
             dynamic = true;
+        } else if (strncmp(argv[i], "--on-eof=", 9) == 0) {
+            string eofAction;
+            if (!(stringstream(&argv[i][9]) >> eofAction)) {
+                cerr << "Error: Expected EOF mode after \"-on-eof=\" option." << endl;
+                exit(-1);
+            }
+            if (eofAction == "-1") {
+                onEOF = IBasicState::RETM1;
+            } else if (eofAction == "0") {
+                onEOF = IBasicState::RET0;
+            } else if (eofAction == "nop") {
+                onEOF = IBasicState::NOP;
+            } else if (eofAction == "abort") {
+                onEOF = IBasicState::ABORT;
+            }
         } else if (temp == "-x" || temp == "--extended") {
             useVariant = EXTENDED;
         } else if (temp == "-x2" || temp == "--extended2") {
@@ -178,58 +199,58 @@ int main(int argc, char* argv[])
         switch (useVariant)
         {
         case VANILLA:
-            myBF = new CVanillaState(cellSize, cellCount, wrapPtr, dynamic, dataFile);
+            myBF = new CVanillaState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile);
         break;
         case EXTENDED:
-            myBF = new CExtendedState(cellSize, dataFile);
+            myBF = new CExtendedState(cellSize, onEOF, dataFile);
             if (wrapPtr) {
                 cerr << "Warning: Pointer wrap-around ignored." << endl;
             }
         break;
         case EXTENDED2:
-            myBF = new CExtended2State(cellSize, dataFile);
+            myBF = new CExtended2State(cellSize, onEOF, dataFile);
             if (wrapPtr) {
                 cerr << "Warning: Pointer wrap-around ignored." << endl;
             }
         break;
         case EXTENDED3:
-            myBF = new CExtended3State(cellSize, dataFile);
+            myBF = new CExtended3State(cellSize, onEOF, dataFile);
             if (wrapPtr) {
                 cerr << "Warning: Pointer wrap-around ignored." << endl;
             }
         break;
         case LOVE:
-            myBF = new CLoveState(cellSize, cellCount, wrapPtr, dynamic, dataFile);
+            myBF = new CLoveState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile);
         break;
         case STACKED:
-            myBF = new CStackedState(cellSize, cellCount, wrapPtr, dynamic, dataFile);
+            myBF = new CStackedState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile);
         break;
         case BCD:
-            myBF = new CBCDState(cellCount, wrapPtr, dynamic, dataFile);
+            myBF = new CBCDState(cellCount, wrapPtr, dynamic, onEOF, dataFile);
             if (cellSize != 1) {
                 cerr << "Warning: Custom cell size ignored. 8-bit supported only." << endl;
             }
         break;
         case STUCK:
-            myBF = new CStuckState(cellSize, cellCount, dynamic, dataFile);
+            myBF = new CStuckState(cellSize, cellCount, dynamic, onEOF, dataFile);
             if (wrapPtr) {
                 cerr << "Warning: Pointer wrap-around ignored." << endl;
             }
         break;
         case JUMP:
-            myBF = new CJumpState(cellSize, dataFile);
+            myBF = new CJumpState(cellSize, onEOF, dataFile);
             if (wrapPtr) {
                 cerr << "Warning: Pointer wrap-around ignored." << endl;
             }
         break;
         case DOLLAR:
-            myBF = new CDollarState(cellSize, cellCount, wrapPtr, dynamic, dataFile);
+            myBF = new CDollarState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile);
         break;
         case SELFMOD:
-            myBF = new CSelfmodState(cellSize, cellCount, wrapPtr, dynamic, dataFile);
+            myBF = new CSelfmodState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile);
         break;
         case CARET:
-            myBF = new CCaretState(cellSize, cellCount, wrapPtr, dynamic, dataFile);
+            myBF = new CCaretState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile);
         break;
         }
 

@@ -22,7 +22,7 @@
 class CExtendedState : public IBasicState
 {
 public:
-    CExtendedState(int size, const std::string& dataFile);
+    CExtendedState(int size, ActionOnEOF onEOF, const std::string& dataFile);
     ~CExtendedState();
 
     //! Converts BF code to manageable token blocks, compressed/optimized if possible

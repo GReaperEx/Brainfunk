@@ -22,7 +22,7 @@
 class CLoveState : public IBasicState
 {
 public:
-    CLoveState(int size, int count, bool wrapPtr, bool dynamicTape, const std::string& dataFile);
+    CLoveState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile);
     ~CLoveState();
 
     //! Converts BF code to manageable token blocks, compressed/optimized if possible

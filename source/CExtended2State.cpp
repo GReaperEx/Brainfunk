@@ -20,8 +20,8 @@
 
 using namespace std;
 
-CExtended2State::CExtended2State(int size, const string& dataFile)
-: IBasicState(size, 10000, false, true, dataFile), curPtrPos(0), IP(1)
+CExtended2State::CExtended2State(int size, ActionOnEOF onEOF, const std::string& dataFile)
+: IBasicState(size, 10000, false, true, onEOF, dataFile), curPtrPos(0), IP(1)
 {}
 
 CExtended2State::~CExtended2State()
@@ -98,8 +98,8 @@ void CExtended2State::run()
         break;
         case ',':
         {
-            CellType temp = { 0 };
-            temp.c8 = cin.get();
+            CellType temp = getCell(curPtrPos);
+            userInput(temp.c8);
             setCell(curPtrPos, temp);
         }
         break;

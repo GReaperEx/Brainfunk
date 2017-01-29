@@ -18,8 +18,8 @@
 
 using namespace std;
 
-CDollarState::CDollarState(int size, int count, bool wrapPtr, bool dynamicTape, const string& dataFile)
-: IBasicState(size, count, wrapPtr, dynamicTape, dataFile), curPtrPos(0), IP(0)
+CDollarState::CDollarState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const string& dataFile)
+: IBasicState(size, count, wrapPtr, dynamicTape, onEOF, dataFile), curPtrPos(0), IP(0)
 {}
 
 CDollarState::~CDollarState()
@@ -114,10 +114,8 @@ void CDollarState::run()
         break;
         case ',':
         {
-            int c = cin.get();
-            CellType temp = { 0 };
-
-            temp.c8 = (char)c;
+            CellType temp = getCell(curPtrPos);
+            userInput(temp.c8);
             setCell(curPtrPos, temp);
         }
         break;
@@ -167,8 +165,24 @@ void CDollarState::run()
         break;
         case ';':
         {
-            CellType temp;
-            cin >> temp.c64;
+            CellType temp = getCell(curPtrPos);
+            if (!(cin >> temp.c64)) {
+                switch (getEOFpolicy())
+                {
+                case IBasicState::RETM1:
+                    temp.c64 = -1;
+                break;
+                case IBasicState::RET0:
+                    temp.c64 = 0;
+                break;
+                case IBasicState::NOP:
+                    temp = getCell(curPtrPos);
+                break;
+                case IBasicState::ABORT:
+                    throw runtime_error("Encountered EOF while processing input.");
+                break;
+                }
+            }
             setCell(curPtrPos, temp);
         }
         break;
@@ -315,6 +329,28 @@ void CDollarState::compile(ostream& output)
     output << "int sSize = 0;" << endl;
     output << "CellType temp;" << endl;
 
+    output << "void getInput(CellType* dst) {" << endl;
+    output << "int temp = getchar();" << endl;
+    output << "if (temp == EOF) {" << endl;
+    switch (getEOFpolicy())
+    {
+    case RETM1:
+        output << "*dst = -1;" << endl;
+    break;
+    case RET0:
+        output << "*dst = 0;" << endl;
+    break;
+    case NOP:
+    break;
+    case ABORT:
+        output << "fputs(\"Error: Encountered EOF while processing input.\", stderr);" << endl;
+        output << "exit(-1);" << endl;
+    break;
+    }
+    output << "} else {" << endl;
+    output << "*dst = (CellType)temp;" << endl;
+    output << "}" << endl;
+    output << "}" << endl;
 
     if (!initData.empty()) {
         output << "{" << endl;
@@ -368,7 +404,7 @@ void CDollarState::compile(ostream& output)
             output << "p[index] -= " << repeat << ';' << endl;
         break;
         case '.':
-            output << "putchar(p[index]);" << endl;
+            output << "getInput(&p[index]);" << endl;
         break;
         case ',':
             output << "p[index] = getchar();" << endl;

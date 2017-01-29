@@ -18,8 +18,8 @@
 
 using namespace std;
 
-CBCDState::CBCDState(int count, bool wrapPtr, bool dynamicTape, const string& dataFile)
-: IBasicState(1, count, wrapPtr, dynamicTape, dataFile), curPtrPos(0), IP(0),
+CBCDState::CBCDState(int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const string& dataFile)
+: IBasicState(1, count, wrapPtr, dynamicTape, onEOF, dataFile), curPtrPos(0), IP(0),
   swapFunctions(false), bufInput(0), isInputBuf(false), bufOutput(0), isOutputBuf(false)
 {}
 
@@ -82,7 +82,11 @@ void CBCDState::run()
             showOutput(_getCell(curPtrPos));
         break;
         case 0xD:
-            _setCell(curPtrPos, getInput());
+        {
+            uint8_t temp = _getCell(curPtrPos);
+            getInput(temp);
+            _setCell(curPtrPos, temp);
+        }
         break;
         case 0xB:
             if (_getCell(curPtrPos) == 0) {

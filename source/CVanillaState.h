@@ -22,7 +22,7 @@
 class CVanillaState : public IBasicState
 {
 public:
-    CVanillaState(int size, int count, bool wrapPtr, bool dynamicTape, const std::string& dataFile);
+    CVanillaState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile);
     ~CVanillaState();
 
     //! Converts BF code to manageable token blocks, compressed/optimized if possible

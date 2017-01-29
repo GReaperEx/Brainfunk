@@ -18,8 +18,8 @@
 
 using namespace std;
 
-CStackedState::CStackedState(int size, int count, bool wrapPtr, bool dynamicTape, const string& dataFile)
-: IBasicState(size, count, wrapPtr, dynamicTape, dataFile), curPtrPos(0), IP(0)
+CStackedState::CStackedState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile)
+: IBasicState(size, count, wrapPtr, dynamicTape, onEOF, dataFile), curPtrPos(0), IP(0)
 {}
 
 CStackedState::~CStackedState()
@@ -122,10 +122,8 @@ void CStackedState::run()
         break;
         case ',':
         {
-            int c = cin.get();
-            CellType temp = { 0 };
-
-            temp.c8 = (char)c;
+            CellType temp = getCell(curPtrPos);
+            userInput(temp.c8);
             setCell(curPtrPos, temp);
         }
         break;
@@ -325,6 +323,29 @@ void CStackedState::compile(ostream& output)
         output << "}" << endl;
     }
 
+    output << "void getInput(CellType* dst) {" << endl;
+    output << "int temp = getchar();" << endl;
+    output << "if (temp == EOF) {" << endl;
+    switch (getEOFpolicy())
+    {
+    case RETM1:
+        output << "*dst = -1;" << endl;
+    break;
+    case RET0:
+        output << "*dst = 0;" << endl;
+    break;
+    case NOP:
+    break;
+    case ABORT:
+        output << "fputs(\"Error: Encountered EOF while processing input.\", stderr);" << endl;
+        output << "exit(-1);" << endl;
+    break;
+    }
+    output << "} else {" << endl;
+    output << "*dst = (CellType)temp;" << endl;
+    output << "}" << endl;
+    output << "}" << endl;
+
     if (!initData.empty()) {
         output << "const CellType datArray[] = { ";
         for (CellType cell : initData) {
@@ -406,7 +427,7 @@ void CStackedState::compile(ostream& output)
             output << "putchar(p[index]);" << endl;
         break;
         case ',':
-            output << "p[index] = getchar();" << endl;
+            output << "getInput(&p[index]);" << endl;
         break;
         case '[':
             output << "while (p[index]) {" << endl;

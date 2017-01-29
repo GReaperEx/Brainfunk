@@ -32,13 +32,15 @@
 class IBasicState
 {
 public:
+    enum ActionOnEOF { RETM1, RET0, NOP, ABORT };
+
     /**
         size        : The size of each cell, acceptable values are 1, 2, 4 or 8
         count       : The amount of cells available, meaningless if dynamicTape == true
         wrapPtr     : Wraps the tape pointer around, can't be true if dynamicTape is also true
         dynamicTape : Makes the available tape grow dynamically when accessing out of upper bounds
      */
-    IBasicState(int size, int count, bool wrapPtr, bool dynamicTape, const std::string& dataFile) {
+    IBasicState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile) {
         if (size != 1 && size != 2 && size != 4 && size != 8) {
             throw std::runtime_error("Invalid cell size. Only 1, 2, 4 and 8 are supported.");
         }
@@ -61,6 +63,7 @@ public:
 
         ptrWrap = wrapPtr;
         dynamic = dynamicTape;
+        eofPolicy = onEOF;
 
         tape = calloc(cellCount, cellSize);
         if (tape == nullptr) {
@@ -112,6 +115,10 @@ protected:
 
     bool isDynamic() const {
         return dynamic;
+    }
+
+    ActionOnEOF getEOFpolicy() const {
+        return eofPolicy;
     }
 
     const CellType getCell(int cellIndex) {
@@ -242,6 +249,30 @@ protected:
         }
     }
 
+    bool userInput(uint8_t& c) {
+        char temp;
+        if (!std::cin.get(temp)) {
+            switch (eofPolicy)
+            {
+            case RETM1:
+                c = -1;
+            break;
+            case RET0:
+                c = 0;
+            break;
+            case NOP:
+                return false;
+            break;
+            case ABORT:
+                throw std::runtime_error("Encountered EOF while processing input.");
+            break;
+            }
+            return true;
+        }
+        c = temp;
+        return true;
+    }
+
     std::vector<CellType> initData;
 
 private:
@@ -285,6 +316,8 @@ private:
 
     bool ptrWrap;
     bool dynamic;
+
+    ActionOnEOF eofPolicy;
 };
 
 #endif // IBASIC_STATE_H
