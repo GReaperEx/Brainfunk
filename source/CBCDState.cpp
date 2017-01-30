@@ -19,7 +19,7 @@
 using namespace std;
 
 CBCDState::CBCDState(int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const string& dataFile)
-: IBasicState(1, count, wrapPtr, dynamicTape, onEOF, dataFile), curPtrPos(0), IP(0),
+: CVanillaState(1, count, wrapPtr, dynamicTape, onEOF, dataFile),
   swapFunctions(false), bufInput(0), isInputBuf(false), bufOutput(0), isOutputBuf(false)
 {}
 
@@ -141,15 +141,15 @@ uint8_t CBCDState::_getCell(int cellIndex)
 
     if (swapFunctions) {
         if (instructions.size() <= realIndex) {
-            if (isDynamic()) {
+            if (dynamic) {
                 instructions.insert(instructions.end(), realIndex - instructions.size() + 1, 0);
-            } else if (wrapsPointer()) {
+            } else if (ptrWrap) {
                 realIndex %= instructions.size();
             } else {
                 throw std::runtime_error("Pointer was incremented too much.");
             }
         } else if (cellIndex < 0) {
-            if (wrapsPointer()) {
+            if (ptrWrap) {
                 cellIndex = instructions.size() + cellIndex % instructions.size();
                 realIndex = cellIndex/2;
             } else {
@@ -166,15 +166,15 @@ void CBCDState::_setCell(int cellIndex, uint8_t newVal)
     if (swapFunctions) {
         unsigned realIndex = cellIndex/2;
         if (instructions.size() <= realIndex) {
-            if (isDynamic()) {
+            if (dynamic) {
                 instructions.insert(instructions.end(), realIndex - instructions.size() + 1, 0);
-            } else if (wrapsPointer()) {
+            } else if (ptrWrap) {
                 realIndex %= instructions.size();
             } else {
                 throw std::runtime_error("Pointer was incremented too much.");
             }
         } else if (cellIndex < 0) {
-            if (wrapsPointer()) {
+            if (ptrWrap) {
                 cellIndex = instructions.size() + cellIndex % instructions.size();
                 realIndex = cellIndex/2;
             } else {
@@ -212,7 +212,7 @@ void CBCDState::_setCode(int codeIndex, uint8_t newVal)
 size_t CBCDState::_getCodeSize()
 {
     if (swapFunctions) {
-        return getCellCount()*2;
+        return cellCount*2;
     }
     return instructions.size()*2;
 }

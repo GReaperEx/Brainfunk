@@ -21,8 +21,10 @@
 using namespace std;
 
 CExtended2State::CExtended2State(int size, ActionOnEOF onEOF, const std::string& dataFile)
-: IBasicState(size, 10000, false, true, onEOF, dataFile), curPtrPos(0), IP(1)
-{}
+: CVanillaState(size, 10000, false, true, onEOF, dataFile), storagePos(0)
+{
+    IP = 1;
+}
 
 CExtended2State::~CExtended2State()
 {}
@@ -62,208 +64,218 @@ void CExtended2State::translate(std::istream& input)
     }
 }
 
-void CExtended2State::run()
-{
-    CellType curCell = { 0 };
-
-    while (curCell.c8 != '@') {
-        curCell = getCell(IP++);
-        switch (curCell.c8)
-        {
-        case '<':
-            --curPtrPos;
-        break;
-        case '>':
-            ++curPtrPos;
-        break;
-        case '+':
-        {
-            CellType temp = getCell(curPtrPos);
-            ++temp.c64;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '-':
-        {
-            CellType temp = getCell(curPtrPos);
-            --temp.c64;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '.':
-        {
-            CellType temp = getCell(curPtrPos);
-            cout.put(temp.c8);
-        }
-        break;
-        case ',':
-        {
-            CellType temp = getCell(curPtrPos);
-            userInput(temp.c8);
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '[':
-        {
-            CellType selCell = getCell(curPtrPos);
-            if (selCell.c64 == 0) {
-                int level = 1;
-                int newIP = IP;
-                while (level != 0) {
-                    CellType temp = getCell(newIP++);
-                    if (temp.c8 == ']') {
-                        --level;
-                    } else if (temp.c8 == '@') {
-                        break;
-                    }
-                }
-                if (level == 0) {
-                    IP = newIP;
-                } else {
-                    CellType temp = getCell(IP-1);
-                    temp.c8 = 1;
-                    setCell(IP-1, temp);
-                }
-            }
-        }
-        break;
-        case ']':
-        {
-            CellType selCell = getCell(curPtrPos);
-            if (selCell.c64 != 0) {
-                int level = 1;
-                int newIP = IP-2;
-                while (level != 0 && newIP >= 0) {
-                    CellType temp = getCell(newIP--);
-                    if (temp.c8 == '[') {
-                        --level;
-                    }
-                }
-                if (level == 0) {
-                    IP = newIP+2;
-                } else {
-                    CellType temp = getCell(IP-1);
-                    temp.c8 = 1;
-                    setCell(IP-1, temp);
-                }
-            }
-        }
-        break;
-        // case '@':
-        // break;
-        case '$':
-            setCell(0, getCell(curPtrPos));
-        break;
-        case '!':
-            setCell(curPtrPos, getCell(0));
-        break;
-        case '{':
-        {
-            CellType temp = getCell(curPtrPos);
-            temp.c64 <<= 1;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '}':
-        {
-            CellType temp = getCell(curPtrPos);
-            temp.c64 >>= 1;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '~':
-        {
-            CellType temp = getCell(curPtrPos);
-            temp.c64 = ~temp.c64;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '^':
-        {
-            CellType temp = getCell(curPtrPos);
-            temp.c64 ^= getCell(0).c64;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '&':
-        {
-            CellType temp = getCell(curPtrPos);
-            temp.c64 &= getCell(0).c64;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '|':
-        {
-            CellType temp = getCell(curPtrPos);
-            temp.c64 |= getCell(0).c64;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '?':
-            IP = curPtrPos;
-        break;
-        case '(':
-            for (int i = curPtrPos; i < getCellCount()-1; i++) {
-                setCell(i, getCell(i+1));
-            }
-        break;
-        case ')':
-        {
-            //! Avoids lengthening the tape if it doesn't have to
-            CellType temp = getCell(getCellCount()-1);
-            int i = getCellCount();
-            if (temp.c64 == 0) {
-                --i;
-            }
-
-            for (; i > curPtrPos; i--) {
-                setCell(i, getCell(i-1));
-            }
-            temp.c64 = 0;
-            setCell(i, temp);
-        }
-        break;
-        case '*':
-        {
-            CellType temp = getCell(curPtrPos);
-            temp.c64 *= getCell(0).c64;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '/':
-        {
-            CellType temp = getCell(curPtrPos);
-            temp.c64 /= getCell(0).c64;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '=':
-        {
-            CellType temp = getCell(curPtrPos);
-            temp.c64 += getCell(0).c64;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '_':
-        {
-            CellType temp = getCell(curPtrPos);
-            temp.c64 -= getCell(0).c64;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '%':
-        {
-            CellType temp = getCell(curPtrPos);
-            temp.c64 %= getCell(0).c64;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        }
-    }
-}
-
 void CExtended2State::compile(std::ostream&)
 {
     throw runtime_error("Extended Brainfuck Type II can't be compiled.");
 }
 
+void CExtended2State::runInstruction(const BFinstr& instr)
+{
+    keepRunning = true;
+
+    switch (instr.token)
+    {
+    case '<':
+        --curPtrPos;
+    break;
+    case '>':
+        ++curPtrPos;
+    break;
+    case '+':
+    {
+        CellType temp = getCell(curPtrPos);
+        ++temp.c64;
+        setCell(curPtrPos, temp);
+    }
+    break;
+    case '-':
+    {
+        CellType temp = getCell(curPtrPos);
+        --temp.c64;
+        setCell(curPtrPos, temp);
+    }
+    break;
+    case '.':
+    {
+        CellType temp = getCell(curPtrPos);
+        cout.put(temp.c8);
+    }
+    break;
+    case ',':
+    {
+        CellType temp = getCell(curPtrPos);
+        userInput(temp.c8);
+        setCell(curPtrPos, temp);
+    }
+    break;
+    case '[':
+    {
+        CellType selCell = getCell(curPtrPos);
+        if (selCell.c64 == 0) {
+            int level = 1;
+            int newIP = IP+1;
+            while (level != 0) {
+                CellType temp = getCell(newIP++);
+                if (temp.c8 == ']') {
+                    --level;
+                } else if (temp.c8 == '[') {
+                    ++level;
+                } else if (temp.c8 == '@') {
+                    break;
+                }
+            }
+            if (level == 0) {
+                IP = newIP - 1;
+            } else {
+                CellType temp = getCell(IP);
+                temp.c8 = 1;
+                setCell(IP, temp);
+            }
+        }
+    }
+    break;
+    case ']':
+    {
+        CellType selCell = getCell(curPtrPos);
+        if (selCell.c64 != 0) {
+            int level = 1;
+            int newIP = IP-1;
+            while (level != 0 && newIP >= 0) {
+                CellType temp = getCell(newIP--);
+                if (temp.c8 == '[') {
+                    --level;
+                } else if (temp.c8 == ']') {
+                    ++level;
+                }
+            }
+            if (level == 0) {
+                IP = newIP+1;
+            } else {
+                CellType temp = getCell(IP);
+                temp.c8 = 1;
+                setCell(IP, temp);
+            }
+        }
+    }
+    break;
+    case '@':
+        keepRunning = false;
+    break;
+    case '$':
+        setCell(storagePos, getCell(curPtrPos));
+    break;
+    case '!':
+        setCell(curPtrPos, getCell(storagePos));
+    break;
+    case '{':
+    {
+        CellType temp = getCell(curPtrPos);
+        temp.c64 <<= 1;
+        setCell(curPtrPos, temp);
+    }
+    break;
+    case '}':
+    {
+        CellType temp = getCell(curPtrPos);
+        temp.c64 >>= 1;
+        setCell(curPtrPos, temp);
+    }
+    break;
+    case '~':
+    {
+        CellType temp = getCell(curPtrPos);
+        temp.c64 = ~temp.c64;
+        setCell(curPtrPos, temp);
+    }
+    break;
+    case '^':
+    {
+        CellType temp = getCell(curPtrPos);
+        temp.c64 ^= getCell(storagePos).c64;
+        setCell(curPtrPos, temp);
+    }
+    break;
+    case '&':
+    {
+        CellType temp = getCell(curPtrPos);
+        temp.c64 &= getCell(storagePos).c64;
+        setCell(curPtrPos, temp);
+    }
+    break;
+    case '|':
+    {
+        CellType temp = getCell(curPtrPos);
+        temp.c64 |= getCell(storagePos).c64;
+        setCell(curPtrPos, temp);
+    }
+    break;
+    case '?':
+        IP = curPtrPos - 1;
+    break;
+    case '(':
+        for (int i = curPtrPos; i < cellCount-1; i++) {
+            setCell(i, getCell(i+1));
+        }
+    break;
+    case ')':
+    {
+        //! Avoids lengthening the tape if it doesn't have to
+        CellType temp = getCell(cellCount-1);
+        int i = cellCount;
+        if (temp.c64 == 0) {
+            --i;
+        }
+
+        for (; i > curPtrPos; i--) {
+            setCell(i, getCell(i-1));
+        }
+        temp.c64 = 0;
+        setCell(i, temp);
+    }
+    break;
+    case '*':
+    {
+        CellType temp = getCell(curPtrPos);
+        temp.c64 *= getCell(storagePos).c64;
+        setCell(curPtrPos, temp);
+    }
+    break;
+    case '/':
+    {
+        CellType temp = getCell(curPtrPos);
+        temp.c64 /= getCell(storagePos).c64;
+        setCell(curPtrPos, temp);
+    }
+    break;
+    case '=':
+    {
+        CellType temp = getCell(curPtrPos);
+        temp.c64 += getCell(storagePos).c64;
+        setCell(curPtrPos, temp);
+    }
+    break;
+    case '_':
+    {
+        CellType temp = getCell(curPtrPos);
+        temp.c64 -= getCell(storagePos).c64;
+        setCell(curPtrPos, temp);
+    }
+    break;
+    case '%':
+    {
+        CellType temp = getCell(curPtrPos);
+        temp.c64 %= getCell(storagePos).c64;
+        setCell(curPtrPos, temp);
+    }
+    break;
+    }
+}
+
+CVanillaState::BFinstr& CExtended2State::getCode(int ip)
+{
+    static BFinstr localTemp(0);
+    localTemp.token = getCell(ip).c8;
+    localTemp.repeat = 1;
+
+    return localTemp;
+}

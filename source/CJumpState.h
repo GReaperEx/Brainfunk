@@ -17,11 +17,11 @@
 #ifndef CJUMP_STATE_H
 #define CJUMP_STATE_H
 
-#include "IBasicState.h"
+#include "CVanillaState.h"
 
 #include <map>
 
-class CJumpState : public IBasicState
+class CJumpState : public CVanillaState
 {
 public:
     CJumpState(int size, ActionOnEOF onEOF, const std::string& dataFile);
@@ -29,26 +29,14 @@ public:
 
     //! Converts BF code to manageable token blocks, compressed/optimized if possible
     void translate(std::istream& input);
-    //! Runs translated code
-    void run();
+
     //! Compiles translated code into C source
     void compile(std::ostream& output);
 
-private:
-    int curPtrPos; //! Selected memory cell
-    unsigned IP;   //! Interpretor only, pseudo Instruction Pointer
-
+protected:
     std::map<CellType, unsigned> jumpPoints;
 
-    struct BFinstr
-    {
-        char token;
-        int repeat;
-
-        BFinstr(char t): token(t), repeat(1) {}
-        void incr() { ++repeat; }
-    };
-    std::vector<BFinstr> instructions;
+    void runInstruction(const BFinstr& instr);
 };
 
 #endif // CJUMP_STATE_H

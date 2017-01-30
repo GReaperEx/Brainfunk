@@ -19,7 +19,7 @@
 using namespace std;
 
 CCaretState::CCaretState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const string& dataFile)
-: IBasicState(size, count, wrapPtr, dynamicTape, onEOF, dataFile), curPtrPos(0), IP(0)
+: CVanillaState(size, count, wrapPtr, dynamicTape, onEOF, dataFile)
 {}
 
 CCaretState::~CCaretState()
@@ -83,185 +83,22 @@ void CCaretState::translate(istream& input)
     }
 }
 
-void CCaretState::run()
+void CCaretState::compilePreMain(std::ostream& output)
 {
-    IP = 0;
-    while (IP < instructions.size()) {
-        switch (instructions[IP].token)
-        {
-        case '>':
-            curPtrPos += instructions[IP].repeat;
-        break;
-        case '<':
-            curPtrPos -= instructions[IP].repeat;
-        break;
-        case '+':
-        {
-            CellType temp = getCell(curPtrPos);
-            temp.c64 += instructions[IP].repeat;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '-':
-        {
-            CellType temp = getCell(curPtrPos);
-            temp.c64 -= instructions[IP].repeat;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '{':
-        {
-            CellType ptr = getCell(curPtrPos);
-            CellType temp = getCell(ptr.c32);
-            temp.c64 -= instructions[IP].repeat;
-            setCell(ptr.c32, temp);
-        }
-        break;
-        case '}':
-        {
-            CellType ptr = getCell(curPtrPos);
-            CellType temp = getCell(ptr.c32);
-            temp.c64 += instructions[IP].repeat;
-            setCell(ptr.c32, temp);
-        }
-        break;
-        case '.':
-        {
-            CellType temp = getCell(curPtrPos);
-            cout.put(temp.c8);
-        }
-        break;
-        case ',':
-        {
-            CellType temp = getCell(curPtrPos);
-            userInput(temp.c8);
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '[':
-            if (getCell(curPtrPos).c64 == 0) {
-                int depth = 1;
-                //! Make sure the brace it jumps to is the correct one, at the same level
-                while (depth > 0) {
-                    ++IP;
-                    char token = instructions[IP].token;
-                    if (token == '[') {
-                        ++depth;
-                    } else if (token == ']') {
-                        --depth;
-                    }
-                }
-            }
-        break;
-        case ']':
-            if (getCell(curPtrPos).c64 != 0) {
-                int depth = 1;
-                //! Make sure the brace it jumps to is the correct one, at the same level
-                while (depth > 0) {
-                    --IP;
-                    char token = instructions[IP].token;
-                    if (token == '[') {
-                        --depth;
-                    } else if (token == ']') {
-                        ++depth;
-                    }
-                }
-            }
-        break;
-        case '(':
-            if (getCell(getCell(curPtrPos).c32).c64 == 0) {
-                int depth = 1;
-                //! Make sure the brace it jumps to is the correct one, at the same level
-                while (depth > 0) {
-                    ++IP;
-                    char token = instructions[IP].token;
-                    if (token == '(') {
-                        ++depth;
-                    } else if (token == ')') {
-                        --depth;
-                    }
-                }
-            }
-        break;
-        case ')':
-            if (getCell(getCell(curPtrPos).c32).c64 != 0) {
-                int depth = 1;
-                //! Make sure the brace it jumps to is the correct one, at the same level
-                while (depth > 0) {
-                    --IP;
-                    char token = instructions[IP].token;
-                    if (token == '(') {
-                        --depth;
-                    } else if (token == ')') {
-                        ++depth;
-                    }
-                }
-            }
-        break;
-        }
-
-        ++IP;
-    }
-}
-
-void CCaretState::compile(ostream& output)
-{
-    output << "#include <stdio.h>" << endl;
-    output << "#include <stdint.h>" << endl;
-    output << "#include <stdlib.h>" << endl;
-    output << "#include <string.h>" << endl;
-
-    switch (getCellSize())
-    {
-    case 1:
-        output << "typedef uint8_t CellType;" << endl;
-    break;
-    case 2:
-        output << "typedef uint16_t CellType;" << endl;
-    break;
-    case 4:
-        output << "typedef uint32_t CellType;" << endl;
-    break;
-    case 8:
-        output << "typedef uint64_t CellType;" << endl;
-    break;
-    }
-
-    if (isDynamic()) {
-        output << "void* incReallocPtr(void* p, int* size, int index) {" << endl;
-        output << "p = realloc(p, (index+1)*sizeof(CellType));" << endl;
-        output << "if (!p) {" << endl;
-        output << "fputs(\"Error: Out of memory!\\n\", stderr);" << endl;
-        output << "exit(-1);" << endl;
-        output << "}" << endl;
-        output << "memset((char*)p+*size*sizeof(CellType), 0, ((index+1)-*size)*sizeof(CellType));" << endl;
-        output << "*size = index+1;" << endl;
-        output << "return p;" << endl;
-        output << "}" << endl;
-    }
-    if (!wrapsPointer()) {
-        output << "void incError() {" << endl;
-        output << "fputs(\"Error: Tried to increment pointer beyond upper bound.\\n\", stderr);" << endl;
-        output << "exit(-1);" << endl;
-        output << "}" << endl;
-        output << "void decError() {" << endl;
-        output << "fputs(\"Error: Tried to decrement pointer beyond lower bound.\\n\", stderr);" << endl;
-        output << "exit(-1);" << endl;
-        output << "}" << endl;
-    }
+    CVanillaState::compilePreMain(output);
 
     output << "CellType* indirectGet(CellType** p, int* size, int index) {" << endl;
     output << "if (index < 0) {" << endl;
-    if (wrapsPointer()) {
-        output << "index = " << getCellCount() << " + index % " << getCellCount() << ';' << endl;
+    if (ptrWrap) {
+        output << "index = " << cellCount << " + index % " << cellCount << ';' << endl;
     } else {
         output << "decError();" << endl;
     }
     output << "} else if (index >= *size) {" << endl;
-    if (wrapsPointer()) {
-        output << "index %= " << getCellCount() << ';' << endl;
+    if (ptrWrap) {
+        output << "index %= " << cellCount << ';' << endl;
     } else {
-        if (isDynamic()) {
+        if (dynamic) {
             output << "*p = incReallocPtr(*p, size, index);" << endl;
         } else {
             output << "incError();" << endl;
@@ -270,113 +107,80 @@ void CCaretState::compile(ostream& output)
     output << "}" << endl;
     output << "return (*p + index);" << endl;
     output << "}" << endl;
+}
 
-    output << "void getInput(CellType* dst) {" << endl;
-    output << "int temp = getchar();" << endl;
-    output << "if (temp == EOF) {" << endl;
-    switch (getEOFpolicy())
+void CCaretState::runInstruction(const BFinstr& instr)
+{
+    CVanillaState::runInstruction(instr);
+
+    switch (instr.token)
     {
-    case RETM1:
-        output << "*dst = -1;" << endl;
-    break;
-    case RET0:
-        output << "*dst = 0;" << endl;
-    break;
-    case NOP:
-    break;
-    case ABORT:
-        output << "fputs(\"Error: Encountered EOF while processing input.\", stderr);" << endl;
-        output << "exit(-1);" << endl;
-    break;
+    case '{':
+    {
+        CellType ptr = getCell(curPtrPos);
+        CellType temp = getCell(ptr.c32);
+        temp.c64 -= instr.repeat;
+        setCell(ptr.c32, temp);
     }
-    output << "} else {" << endl;
-    output << "*dst = (CellType)temp;" << endl;
-    output << "}" << endl;
-    output << "}" << endl;
-
-    if (!initData.empty()) {
-        output << "const CellType datArray[] = { ";
-        for (CellType cell : initData) {
-            output << "0x" << hex << cell.c64 << ',';
-        }
-        output << '\b' << " };" << endl;
+    break;
+    case '}':
+    {
+        CellType ptr = getCell(curPtrPos);
+        CellType temp = getCell(ptr.c32);
+        temp.c64 += instr.repeat;
+        setCell(ptr.c32, temp);
     }
-
-    output << "int main() {" << endl;
-    output << "CellType* p = calloc(" << max(getCellCount(), (int)initData.size()) << ", sizeof(CellType));" << endl;
-    output << "int index = 0;" << endl;
-    output << "int size = " << max(getCellCount(), (int)initData.size()) << ';' << endl;
-
-    if (!initData.empty()) {
-        output << "{" << endl;
-        output << "int i;" << endl;
-        output << "for (i = 0; i < sizeof(datArray)/sizeof(CellType); i++) {" << endl;
-        output << "p[i] = datArray[i];" << endl;
-        output << "}" << endl;
-        output << "}" << endl;
-    }
-
-    for (auto it = instructions.begin(); it != instructions.end(); it++) {
-        int repeat = it->repeat;
-        switch (it->token)
-        {
-        case '>':
-            if (wrapsPointer()) {
-                output << "index = (index + " << repeat << ") % " << getCellCount() << ';' << endl;
-            } else {
-                output << "index += "<< repeat << ';' << endl;
-                output << "if (index >= size) {" << endl;
-                if (isDynamic()) {
-                    output << "p = incReallocPtr(p, &size, index);" << endl;
-                } else {
-                    output << "incError();" << endl;
+    break;
+    case '(':
+        if (getCell(getCell(curPtrPos).c32).c64 == 0) {
+            int depth = 1;
+            //! Make sure the brace it jumps to is the correct one, at the same level
+            while (depth > 0) {
+                ++IP;
+                char token = getCode(IP).token;
+                if (token == '(') {
+                    ++depth;
+                } else if (token == ')') {
+                    --depth;
                 }
-                output << "}" << endl;
             }
-        break;
-        case '<':
-            output << "index -= " << repeat << ';' << endl;
-            output << "if (index < 0) {" << endl;
-            if (wrapsPointer()) {
-                output << "index = " << getCellCount() << " + index % " << getCellCount() << ';' << endl;
-            } else {
-                output << "decError();" << endl;
-            }
-            output << "}" << endl;
-        break;
-        case '+':
-            output << "p[index] += " << repeat << ';' << endl;
-        break;
-        case '-':
-            output << "p[index] -= " << repeat << ';' << endl;
-        break;
-        case '{':
-            output << "*indirectGet(&p, &size, p[index]) -= " << repeat << ';' << endl;
-        break;
-        case '}':
-            output << "*indirectGet(&p, &size, p[index]) += " << repeat << ';' << endl;
-        break;
-        case '.':
-            output << "putchar(p[index]);" << endl;
-        break;
-        case ',':
-            output << "getInput(&p[index]);" << endl;
-        break;
-        case '[':
-            output << "while (p[index]) {" << endl;
-        break;
-        case ']':
-            output << "}" << endl;
-        break;
-        case '(':
-            output << "while (*indirectGet(&p, &size, p[index])) {" << endl;
-        break;
-        case ')':
-            output << "}" << endl;
-        break;
         }
+    break;
+    case ')':
+        if (getCell(getCell(curPtrPos).c32).c64 != 0) {
+            int depth = 1;
+            //! Make sure the brace it jumps to is the correct one, at the same level
+            while (depth > 0) {
+                --IP;
+                char token = getCode(IP).token;
+                if (token == '(') {
+                    --depth;
+                } else if (token == ')') {
+                    ++depth;
+                }
+            }
+        }
+    break;
     }
+}
 
-    output << "free(p);" << endl;
-    output << "}" << endl;
+void CCaretState::compileInstruction(std::ostream& output, const BFinstr& instr)
+{
+    CVanillaState::compileInstruction(output, instr);
+
+    switch (instr.token)
+    {
+    case '{':
+        output << "*indirectGet(&p, &size, p[index]) -= " << instr.repeat << ';' << endl;
+    break;
+    case '}':
+        output << "*indirectGet(&p, &size, p[index]) += " << instr.repeat << ';' << endl;
+    break;
+    case '(':
+        output << "while (*indirectGet(&p, &size, p[index])) {" << endl;
+    break;
+    case ')':
+        output << "}" << endl;
+    break;
+    }
 }

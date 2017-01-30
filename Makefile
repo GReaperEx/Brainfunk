@@ -11,21 +11,25 @@ bfk: $(OBJ) $(OBJD)
 	@echo Linking: $@
 	@g++ $(LFLAGS) -o bfk $(OBJ)
 
-$(OBJD)/bfk.o: $(SRCD)/bfk.cpp $(SRCD)/*.h
-	@echo Compiling: $(<F)
-	@g++ $(CFLAGS) -c -o $(OBJD)/bfk.o $(SRCD)/bfk.cpp
-
-$(OBJD)/%.o: $(SRCD)/%.cpp $(SRCD)/%.h $(SRCD)/IBasicState.h
+$(OBJD)/%.o: $(SRCD)/%.cpp
 	@echo Compiling: $(<F)
 	@g++ $(CFLAGS) -c -o $@ $<
 
 $(OBJD):
 	@mkdir $(OBJD)
 
+$(OBJD)/%.d: $(SRCD)/%.cpp
+	@set -e; rm -f $@; \
+	g++ --std=gnu++11 -MM -MT $(OBJD)/$(*F).o $(CPPFLAGS) $< > $@.$$$$; \
+	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	rm -f $@.$$$$
+
+-include $(OBJ:.o=.d)
+
 .PHONY: clean clean-test install remove test re-test help
 
 clean: clean-test
-	@rm -f bfk $(OBJD)/*.o
+	@rm -f bfk $(OBJD)/*.o $(OBJD)/*.d
 
 clean-test:
 	@$(MAKE) --silent -C $(TSTD)/ clean

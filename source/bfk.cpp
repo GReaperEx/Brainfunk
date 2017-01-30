@@ -36,7 +36,7 @@
 #include "CSelfmodState.h"
 #include "CCaretState.h"
 
-#define VERSION "0.5.5"
+#define VERSION "0.7.0"
 
 using namespace std;
 
@@ -261,12 +261,20 @@ int main(int argc, char* argv[])
         }
 
         if (useStdin) {
+            if (myBF->usesBinInput()) {
+                throw runtime_error("Standard input isn't a binary stream.");
+            }
             myBF->translate(cin);
         } else {
             if (input_file.empty()) {
                 throw runtime_error("No input file was given.");
             }
-            ifstream inputStream(input_file);
+            ifstream inputStream;
+            if (myBF->usesBinInput()) {
+                inputStream.open(input_file, ios::binary);
+            } else {
+                inputStream.open(input_file);
+            }
             if (!inputStream.is_open()) {
                 throw runtime_error("Unable to open "+input_file+" for reading.");
             }

@@ -17,9 +17,11 @@
 #ifndef CBCD_STATE_H
 #define CBCD_STATE_H
 
-#include "IBasicState.h"
+#include "CVanillaState.h"
 
-class CBCDState : public IBasicState
+//! I didn't change this class because I didn't want to mess with it yet( it's a bit complex )
+
+class CBCDState : public CVanillaState
 {
 public:
     CBCDState(int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile);

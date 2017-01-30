@@ -17,9 +17,9 @@
 #ifndef CSTUCK_STATE_H
 #define CSTUCK_STATE_H
 
-#include "IBasicState.h"
+#include "CVanillaState.h"
 
-class CStuckState : public IBasicState
+class CStuckState : public CVanillaState
 {
 public:
     CStuckState(int size, int count, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile);
@@ -27,24 +27,12 @@ public:
 
     //! Converts BF code to manageable token blocks, compressed/optimized if possible
     void translate(std::istream& input);
-    //! Runs translated code
-    void run();
-    //! Compiles translated code into C source
-    void compile(std::ostream& output);
 
-private:
-    int curPtrPos; //! Selected memory cell
-    unsigned IP;   //! Interpretor only, pseudo Instruction Pointer
+protected:
+    void compilePreMain(std::ostream& output);
 
-    struct BFinstr
-    {
-        char token;
-        int repeat;
-
-        BFinstr(char t): token(t), repeat(1) {}
-        void incr() { ++repeat; }
-    };
-    std::vector<BFinstr> instructions;
+    void runInstruction(const BFinstr& instr);
+    void compileInstruction(std::ostream& output, const BFinstr& instr);
 };
 
 #endif // CSTUCK_STATE_H

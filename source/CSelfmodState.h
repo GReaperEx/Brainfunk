@@ -17,9 +17,9 @@
 #ifndef CSELFMOD_STATE_H
 #define CSELFMOD_STATE_H
 
-#include "IBasicState.h"
+#include "CVanillaState.h"
 
-class CSelfmodState : public IBasicState
+class CSelfmodState : public CVanillaState
 {
 public:
     CSelfmodState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile);
@@ -27,14 +27,13 @@ public:
 
     //! Prepares code to be run
     void translate(std::istream& input);
-    //! Runs translated code
-    void run();
+
     //! Does nothing here
     void compile(std::ostream& output);
 
-private:
-    int curPtrPos; //! Selected memory cell
-    unsigned IP;   //! Instruction Pointer
+protected:
+    void runInstruction(const BFinstr& instr);
+    BFinstr& getCode(int ip);
 };
 
 #endif // CSELFMOD_STATE_H

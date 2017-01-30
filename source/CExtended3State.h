@@ -17,11 +17,11 @@
 #ifndef CEXTENDED3_STATE_H
 #define CEXTENDED3_STATE_H
 
-#include "IBasicState.h"
+#include "CExtended2State.h"
 
 #include <map>
 
-class CExtended3State : public IBasicState
+class CExtended3State : public CExtended2State
 {
 public:
     CExtended3State(int size, ActionOnEOF onEOF, const std::string& dataFile);
@@ -29,19 +29,14 @@ public:
 
     //! Prepares memory and code for execution
     void translate(std::istream& input);
-    //! Runs translated code
-    void run();
+
     //! Just throws an error
     void compile(std::ostream& output);
 
-private:
+protected:
     int initPtrPos; //! Because of 'x' command, it needs to remember this
-    int curPtrPos; //! Selected memory cell
-    int IP;   //! Actual Instruction Pointer
 
-    int storagePos; //! Type III makes the storage bit relocatable
     std::map<int, bool> lockMap; //! It also allows for setting read-only memory
-
     std::vector<int> prevPtrs; //! Stack for saving curPtrPos, for use with 'X' command
 
     bool isLocked(int cellIndex) {
@@ -51,6 +46,8 @@ private:
         }
         return false;
     }
+
+    void runInstruction(const BFinstr& instr);
 };
 
 #endif // CEXTENDED3_STATE_H

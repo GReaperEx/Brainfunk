@@ -19,7 +19,7 @@
 using namespace std;
 
 CSelfmodState::CSelfmodState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile)
-: IBasicState(size, count, wrapPtr, dynamicTape, onEOF, dataFile), curPtrPos(0), IP(0)
+: CVanillaState(size, count, wrapPtr, dynamicTape, onEOF, dataFile)
 {}
 
 CSelfmodState::~CSelfmodState()
@@ -57,88 +57,28 @@ void CSelfmodState::translate(istream& input)
     }
 }
 
-void CSelfmodState::run()
-{
-    bool keepRunning = true;
-
-    IP = 0;
-    while (keepRunning) {
-        CellType curInstr = getCell(IP);
-        switch (curInstr.c8)
-        {
-        case '>':
-            ++curPtrPos;
-        break;
-        case '<':
-            --curPtrPos;
-        break;
-        case '+':
-        {
-            CellType temp = getCell(curPtrPos);
-            ++temp.c64;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '-':
-        {
-            CellType temp = getCell(curPtrPos);
-            --temp.c64;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '.':
-        {
-            CellType temp = getCell(curPtrPos);
-            cout.put(temp.c8);
-        }
-        break;
-        case ',':
-        {
-            CellType temp = getCell(curPtrPos);
-            userInput(temp.c8);
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '[':
-            if (getCell(curPtrPos).c64 == 0) {
-                int depth = 1;
-                //! Make sure the brace it jumps to is the correct one, at the same level
-                while (depth > 0) {
-                    ++IP;
-                    char token = getCell(IP).c8;
-                    if (token == '[') {
-                        ++depth;
-                    } else if (token == ']') {
-                        --depth;
-                    }
-                }
-            }
-        break;
-        case ']':
-            if (getCell(curPtrPos).c64 != 0) {
-                int depth = 1;
-                //! Make sure the brace it jumps to is the correct one, at the same level
-                while (depth > 0) {
-                    --IP;
-                    char token = getCell(IP).c8;
-                    if (token == '[') {
-                        --depth;
-                    } else if (token == ']') {
-                        ++depth;
-                    }
-                }
-            }
-        break;
-        case 0:
-            keepRunning = false;
-        break;
-        }
-
-        ++IP;
-    }
-}
-
 void CSelfmodState::compile(ostream&)
 {
     throw runtime_error("Self-modifying Brainfuck can't be compiled.");
+}
+
+void CSelfmodState::runInstruction(const BFinstr& instr)
+{
+    CVanillaState::runInstruction(instr);
+
+    keepRunning = true;
+
+    if (instr.token == 0) {
+        keepRunning = false;
+    }
+}
+
+//! This is just a placeholder
+CVanillaState::BFinstr& CSelfmodState::getCode(int ip)
+{
+    static BFinstr localBuffer(0);
+    localBuffer.token = getCell(ip).c8;
+    localBuffer.repeat = 1;
+
+    return localBuffer;
 }

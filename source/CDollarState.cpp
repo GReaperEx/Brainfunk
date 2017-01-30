@@ -19,7 +19,7 @@
 using namespace std;
 
 CDollarState::CDollarState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const string& dataFile)
-: IBasicState(size, count, wrapPtr, dynamicTape, onEOF, dataFile), curPtrPos(0), IP(0)
+: CVanillaState(size, count, wrapPtr, dynamicTape, onEOF, dataFile)
 {}
 
 CDollarState::~CDollarState()
@@ -80,176 +80,11 @@ void CDollarState::translate(istream& input)
     }
 }
 
-void CDollarState::run()
+void CDollarState::compilePreMain(std::ostream& output)
 {
-    IP = 0;
-    while (IP < instructions.size()) {
-        switch (instructions[IP].token)
-        {
-        case '>':
-            curPtrPos += instructions[IP].repeat;
-        break;
-        case '<':
-            curPtrPos -= instructions[IP].repeat;
-        break;
-        case '+':
-        {
-            CellType temp = getCell(curPtrPos);
-            temp.c64 += instructions[IP].repeat;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '-':
-        {
-            CellType temp = getCell(curPtrPos);
-            temp.c64 -= instructions[IP].repeat;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '.':
-        {
-            CellType temp = getCell(curPtrPos);
-            cout.put(temp.c8);
-        }
-        break;
-        case ',':
-        {
-            CellType temp = getCell(curPtrPos);
-            userInput(temp.c8);
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '[':
-            if (getCell(curPtrPos).c64 == 0) {
-                int depth = 1;
-                //! Make sure the brace it jumps to is the correct one, at the same level
-                while (depth > 0) {
-                    ++IP;
-                    char token = instructions[IP].token;
-                    if (token == '[') {
-                        ++depth;
-                    } else if (token == ']') {
-                        --depth;
-                    }
-                }
-            }
-        break;
-        case ']':
-            if (getCell(curPtrPos).c64 != 0) {
-                int depth = 1;
-                //! Make sure the brace it jumps to is the correct one, at the same level
-                while (depth > 0) {
-                    --IP;
-                    char token = instructions[IP].token;
-                    if (token == '[') {
-                        --depth;
-                    } else if (token == ']') {
-                        ++depth;
-                    }
-                }
-            }
-        break;
-        case '#':
-            cellStack.push_back(getCell(curPtrPos));
-        break;
-        case '$':
-            if (!cellStack.empty()) {
-                cellStack.pop_back();
-            }
-        break;
-        case ':':
-        {
-            CellType temp = getCell(curPtrPos);
-            cout << temp.c64;
-        }
-        break;
-        case ';':
-        {
-            CellType temp = getCell(curPtrPos);
-            if (!(cin >> temp.c64)) {
-                switch (getEOFpolicy())
-                {
-                case IBasicState::RETM1:
-                    temp.c64 = -1;
-                break;
-                case IBasicState::RET0:
-                    temp.c64 = 0;
-                break;
-                case IBasicState::NOP:
-                    temp = getCell(curPtrPos);
-                break;
-                case IBasicState::ABORT:
-                    throw runtime_error("Encountered EOF while processing input.");
-                break;
-                }
-            }
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '(':
-            instructions[IP].repeat = cellStack.back().c32 & 0x7FFFFFFF;
-            if (instructions[IP].repeat == 0) {
-                int depth = 1;
-                while (depth > 0) {
-                    ++IP;
-                    char token = instructions[IP].token;
-                    if (token == '(') {
-                        ++depth;
-                    } else if (token == ')') {
-                        --depth;
-                    }
-                }
-            }
-        break;
-        case ')':
-        {
-            int depth = 1;
-            int startIP = IP;
-
-            while (depth > 0) {
-                --IP;
-                char token = instructions[IP].token;
-                if (token == '(') {
-                    --depth;
-                } else if (token == ')') {
-                    ++depth;
-                }
-            }
-
-            if (--instructions[IP].repeat <= 0) {
-                IP = startIP;
-            }
-        }
-        break;
-        }
-
-        ++IP;
-    }
-}
-
-void CDollarState::compile(ostream& output)
-{
-    output << "#include <stdio.h>" << endl;
-    output << "#include <stdint.h>" << endl;
-    output << "#include <stdlib.h>" << endl;
     output << "#include <inttypes.h>" << endl;
-    output << "#include <string.h>" << endl;
 
-    switch (getCellSize())
-    {
-    case 1:
-        output << "typedef uint8_t CellType;" << endl;
-    break;
-    case 2:
-        output << "typedef uint16_t CellType;" << endl;
-    break;
-    case 4:
-        output << "typedef uint32_t CellType;" << endl;
-    break;
-    case 8:
-        output << "typedef uint64_t CellType;" << endl;
-    break;
-    }
+    CVanillaState::compilePreMain(output);
 
     output << "void* pushStack(CellType* p, int* size, int* index, CellType newVal) {" << endl;
     output << "++*index;" << endl;
@@ -281,36 +116,6 @@ void CDollarState::compile(ostream& output)
     output << "return toReturn;" << endl;
     output << "}" << endl;
 
-    if (isDynamic()) {
-        output << "void* incReallocPtr(void* p, int* size, int index) {" << endl;
-        output << "p = realloc(p, (index+1)*sizeof(CellType));" << endl;
-        output << "if (!p) {" << endl;
-        output << "fputs(\"Error: Out of memory!\\n\", stderr);" << endl;
-        output << "exit(-1);" << endl;
-        output << "}" << endl;
-        output << "memset((char*)p+*size*sizeof(CellType), 0, ((index+1)-*size)*sizeof(CellType));" << endl;
-        output << "*size = index+1;" << endl;
-        output << "return p;" << endl;
-        output << "}" << endl;
-    }
-    if (!wrapsPointer()) {
-        output << "void incError() {" << endl;
-        output << "fputs(\"Error: Tried to increment pointer beyond upper bound.\\n\", stderr);" << endl;
-        output << "exit(-1);" << endl;
-        output << "}" << endl;
-        output << "void decError() {" << endl;
-        output << "fputs(\"Error: Tried to decrement pointer beyond lower bound.\\n\", stderr);" << endl;
-        output << "exit(-1);" << endl;
-        output << "}" << endl;
-    }
-
-    if (!initData.empty()) {
-        output << "const CellType datArray[] = { ";
-        for (CellType cell : initData) {
-            output << "0x" << hex << cell.c64 << ',';
-        }
-        output << " };" <<  endl;
-    }
     if (!cellStack.empty()) {
         output << "const CellType stackData[] = { ";
         for (CellType cell : cellStack) {
@@ -318,48 +123,17 @@ void CDollarState::compile(ostream& output)
         }
         output << " };" << endl;
     }
+}
 
-    output << "int main() {" << endl;
-    output << "CellType* p = calloc(" << max(getCellCount(), (int)initData.size()) << ", sizeof(CellType));" << endl;
-    output << "int index = 0;" << endl;
-    output << "int size = " << max(getCellCount(), (int)initData.size()) << ';' << endl;
-
+void CDollarState::compilePreInst(std::ostream& output)
+{
     output << "CellType* pS = NULL;" << endl;
     output << "int sIndex = -1;" << endl;
     output << "int sSize = 0;" << endl;
     output << "CellType temp;" << endl;
 
-    output << "void getInput(CellType* dst) {" << endl;
-    output << "int temp = getchar();" << endl;
-    output << "if (temp == EOF) {" << endl;
-    switch (getEOFpolicy())
-    {
-    case RETM1:
-        output << "*dst = -1;" << endl;
-    break;
-    case RET0:
-        output << "*dst = 0;" << endl;
-    break;
-    case NOP:
-    break;
-    case ABORT:
-        output << "fputs(\"Error: Encountered EOF while processing input.\", stderr);" << endl;
-        output << "exit(-1);" << endl;
-    break;
-    }
-    output << "} else {" << endl;
-    output << "*dst = (CellType)temp;" << endl;
-    output << "}" << endl;
-    output << "}" << endl;
+    CVanillaState::compilePreInst(output);
 
-    if (!initData.empty()) {
-        output << "{" << endl;
-        output << "int i;" << endl;
-        output << "for (i = 0; i < sizeof(datArray)/sizeof(datArray[0])); i++) {" << endl;
-        output << "p[i] = datArray[i];" << endl;
-        output << "}" << endl;
-        output << "}" << endl;
-    }
     if (!cellStack.empty()) {
         output << "{" << endl;
         output << "int i;" << endl;
@@ -368,80 +142,124 @@ void CDollarState::compile(ostream& output)
         output << "}" << endl;
         output << "}" << endl;
     }
+}
 
-    for (auto it = instructions.begin(); it != instructions.end(); it++) {
-        int repeat = it->repeat;
-        switch (it->token)
-        {
-        case '>':
-            if (wrapsPointer()) {
-                output << "index = (index + " << repeat << ") % " << getCellCount() << ';' << endl;
-            } else {
-                output << "index += "<< repeat << ';' << endl;
-                output << "if (index >= size) {" << endl;
-                if (isDynamic()) {
-                    output << "p = incReallocPtr(p, &size, index);" << endl;
-                } else {
-                    output << "incError();" << endl;
+void CDollarState::compileCleanup(std::ostream& output)
+{
+    CVanillaState::compileCleanup(output);
+    output << "free(pS);" << endl;
+}
+
+void CDollarState::runInstruction(const BFinstr& instr)
+{
+    CVanillaState::runInstruction(instr);
+
+    switch (instr.token)
+    {
+    case '#':
+        cellStack.push_back(getCell(curPtrPos));
+    break;
+    case '$':
+        if (!cellStack.empty()) {
+            cellStack.pop_back();
+        }
+    break;
+    case ':':
+    {
+        CellType temp = getCell(curPtrPos);
+        cout << temp.c64;
+    }
+    break;
+    case ';':
+    {
+        CellType temp = getCell(curPtrPos);
+        if (!(cin >> temp.c64)) {
+            switch (eofPolicy)
+            {
+            case IBasicState::RETM1:
+                temp.c64 = -1;
+            break;
+            case IBasicState::RET0:
+                temp.c64 = 0;
+            break;
+            case IBasicState::NOP:
+                temp = getCell(curPtrPos);
+            break;
+            case IBasicState::ABORT:
+                throw runtime_error("Encountered EOF while processing input.");
+            break;
+            }
+        }
+        setCell(curPtrPos, temp);
+    }
+    break;
+    case '(':
+        getCode(IP).repeat = cellStack.back().c32 & 0x7FFFFFFF;
+        if (getCode(IP).repeat == 0) {
+            int depth = 1;
+            while (depth > 0) {
+                ++IP;
+                char token = getCode(IP).token;
+                if (token == '(') {
+                    ++depth;
+                } else if (token == ')') {
+                    --depth;
                 }
-                output << "}" << endl;
             }
-        break;
-        case '<':
-            output << "index -= " << repeat << ';' << endl;
-            output << "if (index < 0) {" << endl;
-            if (wrapsPointer()) {
-                output << "index = " << getCellCount() << " + index % " << getCellCount() << ';' << endl;
-            } else {
-                output << "decError();" << endl;
+        }
+    break;
+    case ')':
+    {
+        int depth = 1;
+        int startIP = IP;
+
+        while (depth > 0) {
+            --IP;
+            char token = getCode(IP).token;
+            if (token == '(') {
+                --depth;
+            } else if (token == ')') {
+                ++depth;
             }
-            output << "}" << endl;
-        break;
-        case '+':
-            output << "p[index] += " << repeat << ';' << endl;
-        break;
-        case '-':
-            output << "p[index] -= " << repeat << ';' << endl;
-        break;
-        case '.':
-            output << "getInput(&p[index]);" << endl;
-        break;
-        case ',':
-            output << "p[index] = getchar();" << endl;
-        break;
-        case '[':
-            output << "while (p[index]) {" << endl;
-        break;
-        case ']':
-            output << "}" << endl;
-        break;
-        case '#':
-            output << "pS = pushStack(pS, &sSize, &sIndex, p[index]);" << endl;
-        break;
-        case '$':
-            output << "p[index] = popStack(pS, &sIndex);" << endl;
-        break;
-        case ':':
-            output << "printf(\"%\" PRIu" << getCellSize()*8 << ", p[index]);" << endl;
-        break;
-        case ';':
-            output << "while (scanf(\"%\" SCNu" << getCellSize()*8 << ", &p[index]) != 1) {" << endl;
-            output << "(void) getchar();" << endl;
-            output << "}" << endl;
-        break;
-        case '(':
-            output << "{" << endl;
-            output << "CellType localLimit = peekStack(pS, sIndex);" << endl;
-            output << "CellType localI;" << endl;
-            output << "for (localI = 0; localI < localLimit; localI++) {" << endl;
-        break;
-        case ')':
-            output << "}" << endl;
-            output << "}" << endl;
-        break;
+        }
+
+        if (--instructions[IP].repeat <= 0) {
+            IP = startIP;
         }
     }
+    break;
+    }
+}
 
-    output << "free(p);" << endl;
-    output << "}" << endl;
+void CDollarState::compileInstruction(std::ostream& output, const BFinstr& instr)
+{
+    CVanillaState::compileInstruction(output, instr);
+
+    switch (instr.token)
+    {
+    case '#':
+        output << "pS = pushStack(pS, &sSize, &sIndex, p[index]);" << endl;
+    break;
+    case '$':
+        output << "p[index] = popStack(pS, &sIndex);" << endl;
+    break;
+    case ':':
+        output << "printf(\"%\" PRIu" << cellSize*8 << ", p[index]);" << endl;
+    break;
+    case ';':
+        output << "while (scanf(\"%\" SCNu" << cellSize*8 << ", &p[index]) != 1) {" << endl;
+        output << "(void) getchar();" << endl;
+        output << "}" << endl;
+    break;
+    case '(':
+        output << "{" << endl;
+        output << "CellType localLimit = peekStack(pS, sIndex);" << endl;
+        output << "CellType localI;" << endl;
+        output << "for (localI = 0; localI < localLimit; localI++) {" << endl;
+    break;
+    case ')':
+        output << "}" << endl;
+        output << "}" << endl;
+    break;
+    }
 }

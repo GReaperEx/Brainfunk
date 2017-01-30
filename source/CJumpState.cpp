@@ -19,7 +19,7 @@
 using namespace std;
 
 CJumpState::CJumpState(int size, ActionOnEOF onEOF, const string& dataFile)
-: IBasicState(size, 10000, false, true, onEOF, dataFile), curPtrPos(0), IP(0)
+: CVanillaState(size, 10000, false, true, onEOF, dataFile)
 {}
 
 CJumpState::~CJumpState()
@@ -72,90 +72,24 @@ void CJumpState::translate(istream& input)
     }
 }
 
-void CJumpState::run()
-{
-    IP = 0;
-    while (IP < instructions.size()) {
-        switch (instructions[IP].token)
-        {
-        case '>':
-            curPtrPos += instructions[IP].repeat;
-        break;
-        case '<':
-            curPtrPos -= instructions[IP].repeat;
-        break;
-        case '+':
-        {
-            CellType temp = getCell(curPtrPos);
-            temp.c64 += instructions[IP].repeat;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '-':
-        {
-            CellType temp = getCell(curPtrPos);
-            temp.c64 -= instructions[IP].repeat;
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '.':
-        {
-            CellType temp = getCell(curPtrPos);
-            cout.put(temp.c8);
-        }
-        break;
-        case ',':
-        {
-            CellType temp = getCell(curPtrPos);
-            userInput(temp.c8);
-            setCell(curPtrPos, temp);
-        }
-        break;
-        case '[':
-            if (getCell(curPtrPos).c64 == 0) {
-                int depth = 1;
-                //! Make sure the brace it jumps to is the correct one, at the same level
-                while (depth > 0) {
-                    ++IP;
-                    char token = instructions[IP].token;
-                    if (token == '[') {
-                        ++depth;
-                    } else if (token == ']') {
-                        --depth;
-                    }
-                }
-            }
-        break;
-        case ']':
-            if (getCell(curPtrPos).c64 != 0) {
-                int depth = 1;
-                //! Make sure the brace it jumps to is the correct one, at the same level
-                while (depth > 0) {
-                    --IP;
-                    char token = instructions[IP].token;
-                    if (token == '[') {
-                        --depth;
-                    } else if (token == ']') {
-                        ++depth;
-                    }
-                }
-            }
-        break;
-        case '&':
-            jumpPoints[getCell(curPtrPos)] = IP+1;
-            setCell(curPtrPos, CellType{0});
-        break;
-        case '%':
-            IP = jumpPoints[getCell(curPtrPos)] - 1;
-            setCell(curPtrPos, getCell(curPtrPos+1));
-        break;
-        }
-
-        ++IP;
-    }
-}
-
 void CJumpState::compile(ostream&)
 {
     throw runtime_error("Jumpfuck can't be compiled.");
+}
+
+void CJumpState::runInstruction(const BFinstr& instr)
+{
+    CVanillaState::runInstruction(instr);
+
+    switch (instr.token)
+    {
+    case '&':
+        jumpPoints[getCell(curPtrPos)] = IP+1;
+        setCell(curPtrPos, CellType{0});
+    break;
+    case '%':
+        IP = jumpPoints[getCell(curPtrPos)] - 1;
+        setCell(curPtrPos, getCell(curPtrPos+1));
+    break;
+    }
 }

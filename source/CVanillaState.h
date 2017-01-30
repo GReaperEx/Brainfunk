@@ -22,6 +22,12 @@
 class CVanillaState : public IBasicState
 {
 public:
+    /**
+        size        : The size of each cell, acceptable values are 1, 2, 4 or 8
+        count       : The amount of cells available, meaningless if dynamicTape == true
+        wrapPtr     : Wraps the tape pointer around, can't be true if dynamicTape is also true
+        dynamicTape : Makes the available tape grow dynamically when accessing out of upper bounds
+     */
     CVanillaState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile);
     ~CVanillaState();
 
@@ -32,9 +38,21 @@ public:
     //! Compiles translated code into C source
     void compile(std::ostream& output);
 
-private:
+protected:
+    void* tape;
+
+    int cellSize;
+    int cellCount;
+
+    bool ptrWrap;
+    bool dynamic;
+
+    ActionOnEOF eofPolicy;
+
     int curPtrPos; //! Selected memory cell
     unsigned IP;   //! Interpretor only, pseudo Instruction Pointer
+
+    bool keepRunning;
 
     struct BFinstr
     {
@@ -45,6 +63,28 @@ private:
         void incr() { ++repeat; }
     };
     std::vector<BFinstr> instructions;
+
+    std::vector<CellType> initData;
+
+    const CellType getCell(int cellIndex);
+    void setCell(int cellIndex, const CellType& newValue);
+
+    //! Understands escape sequences, symbol, octal and hex
+    //! Only hex values can be > 255( technically, octal too but not for much )
+    void parseData(std::istream& input);
+
+    bool userInput(uint8_t& c);
+
+    void examineIndex(int& cellIndex);
+
+    virtual void compilePreMain(std::ostream& output);
+    virtual void compilePreInst(std::ostream& output);
+    virtual void compileCleanup(std::ostream& output);
+
+    virtual void runInstruction(const BFinstr& instr);
+    virtual void compileInstruction(std::ostream& output, const BFinstr& instr);
+
+    virtual BFinstr& getCode(int ip);
 };
 
 #endif // CVANILLA_STATE_H

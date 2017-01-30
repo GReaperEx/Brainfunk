@@ -17,9 +17,9 @@
 #ifndef CEXTENDED2_STATE_H
 #define CEXTENDED2_STATE_H
 
-#include "IBasicState.h"
+#include "CVanillaState.h"
 
-class CExtended2State : public IBasicState
+class CExtended2State : public CVanillaState
 {
 public:
     CExtended2State(int size, ActionOnEOF onEOF, const std::string& dataFile);
@@ -27,14 +27,15 @@ public:
 
     //! Prepares memory and code for execution
     void translate(std::istream& input);
-    //! Runs translated code
-    void run();
+
     //! Just throws an error
     void compile(std::ostream& output);
 
-private:
-    int curPtrPos; //! Selected memory cell
-    int IP;   //! Actual Instruction Pointer
+protected:
+    int storagePos;
+
+    void runInstruction(const BFinstr& instr);
+    BFinstr& getCode(int ip);
 };
 
 #endif // CEXTENDED2_STATE_H
