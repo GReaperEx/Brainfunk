@@ -92,7 +92,7 @@ void CExtendedState::runInstruction(const BFinstr& instr)
     switch (instr.token)
     {
     case '@':
-        IP = instructions.size();
+        keepRunning = false;
     break;
     case '$':
         storage = getCell(curPtrPos);
