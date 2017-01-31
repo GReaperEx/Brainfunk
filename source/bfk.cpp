@@ -35,13 +35,14 @@
 #include "CDollarState.h"
 #include "CSelfmodState.h"
 #include "CCaretState.h"
+#include "CBitchanState.h"
 
-#define VERSION "0.7.0"
+#define VERSION "0.7.5"
 
 using namespace std;
 
 enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3, LOVE, STACKED, BCD, STUCK, JUMP,
-                    DOLLAR, SELFMOD, CARET };
+                    DOLLAR, SELFMOD, CARET, BITCHAN };
 
 int main(int argc, char* argv[])
 {
@@ -88,6 +89,7 @@ int main(int argc, char* argv[])
             cout << "    --dollar         ; Uses \'Brainfuck$\' instead" << endl;
             cout << "    --self-mod       ; Uses \'Self-modifying Brainfuck\' instead" << endl;
             cout << "    --caret          ; Uses \'Brainfuck^\' instead" << endl;
+            cout << "    --bit-chan       ; Uses \'Bitchanger\' instead" << endl;
             cout << "    -c, --compile    ; Compiles BF code into native binary, if possible" << endl;
             cout << "    -o X, --output=X ; For compiling only (Default=\"a.out\")" << endl;
             cout << "    -d X, --data=X   ; Memory initialization data( ASCII file )" << endl;
@@ -144,6 +146,8 @@ int main(int argc, char* argv[])
             useVariant = SELFMOD;
         } else if (temp == "--caret") {
             useVariant = CARET;
+        } else if (temp == "--bit-chan") {
+            useVariant = BITCHAN;
         } else if (temp == "-j" || temp == "--jump") {
             useVariant = JUMP;
         } else if (temp == "-c" || temp == "--compile") {
@@ -258,6 +262,14 @@ int main(int argc, char* argv[])
         case CARET:
             myBF = new CCaretState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile);
         break;
+        case BITCHAN:
+            myBF = new CBitchanState(cellCount, wrapPtr, dynamic, dataFile);
+            if (cellSize != 1) {
+                cerr << "Warning: Custom cell size ignored." << endl;
+            }
+            if (onEOF != IBasicState::RETM1) {
+                cerr << "Warning: Custom EOF policy ignored." << endl;
+            }
         }
 
         if (useStdin) {

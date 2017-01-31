@@ -26,4 +26,5 @@ Supported languages up-to-date:
 * Brainfuck$
 * Self-modifying Brainfuck
 * Brainfuck^
+* Bitchanger
 
