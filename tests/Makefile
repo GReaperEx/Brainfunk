@@ -11,7 +11,7 @@ clean:
 
 %.c.out: %.c.bf %.in %.use %.val
 	echo Testing: $(*F)'-c'
-	../bfk -c $(cat $*'.use') $< > /dev/null -o $*'.exe' && \
+	../bfk -c $(shell cat $*'.use') $< > /dev/null -o $*'.exe' && \
 	sync $*'.exe' && \
 	./$*'.exe' < $*'.in' > $@ && \
 	sync $@ && \
@@ -19,7 +19,7 @@ clean:
 
 %.out: %.bf %.in %.use %.val
 	echo Testing: $(*F)
-	../bfk $(cat $*'.use') $*'.bf' < $*'.in' > $*'.out' && \
+	../bfk $(shell cat $*'.use') $< < $*'.in' > $@ && \
 	sync $@ && \
 	diff  $*'.val' $@
 

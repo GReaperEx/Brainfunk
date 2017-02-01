@@ -36,13 +36,14 @@
 #include "CSelfmodState.h"
 #include "CCaretState.h"
 #include "CBitchanState.h"
+#include "CCompressedState.h"
 
 #define VERSION "0.7.5"
 
 using namespace std;
 
 enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3, LOVE, STACKED, BCD, STUCK, JUMP,
-                    DOLLAR, SELFMOD, CARET, BITCHAN };
+                    DOLLAR, SELFMOD, CARET, BITCHAN, COMPRESSED };
 
 int main(int argc, char* argv[])
 {
@@ -90,6 +91,7 @@ int main(int argc, char* argv[])
             cout << "    --self-mod       ; Uses \'Self-modifying Brainfuck\' instead" << endl;
             cout << "    --caret          ; Uses \'Brainfuck^\' instead" << endl;
             cout << "    --bit-chan       ; Uses \'Bitchanger\' instead" << endl;
+            cout << "    --compressed     ; Uses \'CompressedFuck\' instead" << endl;
             cout << "    -c, --compile    ; Compiles BF code into native binary, if possible" << endl;
             cout << "    -o X, --output=X ; For compiling only (Default=\"a.out\")" << endl;
             cout << "    -d X, --data=X   ; Memory initialization data( ASCII file )" << endl;
@@ -148,6 +150,8 @@ int main(int argc, char* argv[])
             useVariant = CARET;
         } else if (temp == "--bit-chan") {
             useVariant = BITCHAN;
+        } else if (temp == "--compressed") {
+            useVariant = COMPRESSED;
         } else if (temp == "-j" || temp == "--jump") {
             useVariant = JUMP;
         } else if (temp == "-c" || temp == "--compile") {
@@ -270,6 +274,10 @@ int main(int argc, char* argv[])
             if (onEOF != IBasicState::RETM1) {
                 cerr << "Warning: Custom EOF policy ignored." << endl;
             }
+        break;
+        case COMPRESSED:
+            myBF = new CCompressedState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile);
+        break;
         }
 
         if (useStdin) {

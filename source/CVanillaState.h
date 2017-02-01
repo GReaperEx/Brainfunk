@@ -32,11 +32,11 @@ public:
     ~CVanillaState();
 
     //! Converts BF code to manageable token blocks, compressed/optimized if possible
-    void translate(std::istream& input);
+    virtual void translate(std::istream& input);
     //! Runs translated code
-    void run();
+    virtual void run();
     //! Compiles translated code into C source
-    void compile(std::ostream& output);
+    virtual void compile(std::ostream& output);
 
 protected:
     void* tape;
