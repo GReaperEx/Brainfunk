@@ -23,6 +23,8 @@
 #include <cstring>
 #include <cstdint>
 
+#include <getopt.h>
+
 #include "CVanillaState.h"
 #include "CExtendedState.h"
 #include "CExtended2State.h"
@@ -38,12 +40,30 @@
 #include "CBitchanState.h"
 #include "CCompressedState.h"
 
-#define VERSION "0.7.5"
+#define VERSION "0.7.6"
 
 using namespace std;
 
 enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3, LOVE, STACKED, BCD, STUCK, JUMP,
                     DOLLAR, SELFMOD, CARET, BITCHAN, COMPRESSED };
+
+const char shortOptions[] = "hvs:t:wye:co:d:ijx::";
+
+const option longOptions[] = {
+    { "help",         no_argument,       0, 'h' },
+    { "version",      no_argument,       0, 'v' },
+    { "cell-size",    required_argument, 0, 's' },
+    { "tape-size",    required_argument, 0, 't' },
+    { "wrap-pointer", no_argument,       0, 'w' },
+    { "dynamic-tape", no_argument,       0, 'y' },
+    { "eof-action",   required_argument, 0, 'e' },
+    { "compile",      no_argument,       0, 'c' },
+    { "output",       required_argument, 0, 'o' },
+    { "data",         required_argument, 0, 'd' },
+    { "stdin",        no_argument,       0, 'i' },
+    { "lang",         required_argument, 0, 256 },
+    { 0, 0, 0, 0 }
+};
 
 int main(int argc, char* argv[])
 {
@@ -62,63 +82,78 @@ int main(int argc, char* argv[])
 
     bool useStdin = false;
 
-    for (int i = 1; i < argc; i++) {
-        string temp(argv[i]);
-        if (temp == "-h" || temp == "--help") {
+    //! Parsing everything
+
+    for (;;) {
+        int longIndex;
+        int op = getopt_long(argc, argv, shortOptions, longOptions, &longIndex);
+        if (op == -1) {
+            break;
+        }
+
+        switch (op)
+        {
+        case 'h':
             cout << "Usage:" << endl;
-            cout << "    bfk [options] input_file" << endl;
+            cout << "  bfk [options] input_file" << endl;
             cout << "Options:" << endl;
-            cout << "    -h, --help       ; Print this helpful message and exit" << endl;
-            cout << "    -v, --version    ; Print program version and exit" << endl;
-            cout << "    --cell-size=X    ; Sets cell size, only accepts 1, 2, 4 and 8 (Default=1)" << endl;
-            cout << "    --cell-count=X   ; Sets amount of available cells (Default=32768)" << endl;
-            cout << "    --wrap-pointer   ; Confines the memory pointer between bounds" << endl;
-            cout << "    --dynamic-tape   ; Makes the \'tape\' grow dynamically, without limit" << endl;
-            cout << "    --on-eof=<act>   ; Changes the default behavior when managing EOF" << endl;
-            cout << "        -1           ; Returns -1 to the program (Default)" << endl;
-            cout << "        0            ; Returns 0 to the program" << endl;
-            cout << "        nop          ; Simply ignores the command" << endl;
-            cout << "        abort        ; Quits execution with an error message" << endl;
-            cout << "    -x, --extended   ; Uses \'Extended Brainfuck Type I\' instead of vanilla" << endl;
-            cout << "    -x2, --extended2 ; Uses \'Extended Brainfuck Type II\' instead" << endl;
-            cout << "    -x3, --extended3 ; Uses \'Extended Brainfuck Type III\' instead" << endl;
-            cout << "    -j, --jump       ; Uses \'JumpFuck\' instead" << endl;
-            cout << "    --love           ; Uses \'Brainlove\' instead" << endl;
-            cout << "    --stacked        ; Uses \'Stacked Brainfuck\' instead" << endl;
-            cout << "    --bcd            ; Uses \'BCDFuck\' instead" << endl;
-            cout << "    --stuck          ; Uses \'Brainstuck\' instead" << endl;
-            cout << "    --dollar         ; Uses \'Brainfuck$\' instead" << endl;
-            cout << "    --self-mod       ; Uses \'Self-modifying Brainfuck\' instead" << endl;
-            cout << "    --caret          ; Uses \'Brainfuck^\' instead" << endl;
-            cout << "    --bit-chan       ; Uses \'Bitchanger\' instead" << endl;
-            cout << "    --compressed     ; Uses \'CompressedFuck\' instead" << endl;
-            cout << "    -c, --compile    ; Compiles BF code into native binary, if possible" << endl;
-            cout << "    -o X, --output=X ; For compiling only (Default=\"a.out\")" << endl;
-            cout << "    -d X, --data=X   ; Memory initialization data( ASCII file )" << endl;
-            cout << "    --stdin          ; Take code input from standard input instead" << endl;
+            cout << "  -h, --help            ; Print this helpful message and exit" << endl;
+            cout << "  -v, --version         ; Print program version and exit" << endl;
+            cout << "  -s X, --cell-size=X   ; Sets cell size, only accepts 1, 2, 4 or 8 (Default=1)" << endl;
+            cout << "  -t X, --tape-size=X   ; Sets amount of available cells (Default=32768)" << endl;
+            cout << "  -w, --wrap-pointer    ; Confines the memory pointer between bounds" << endl;
+            cout << "  -y, --dynamic-tape    ; Makes the \'tape\' grow dynamically, without limit" << endl;
+            cout << "  -e X, --eof-action=X  ; Changes the default behavior when managing EOF" << endl;
+            cout << "        -1              ; Returns -1 to the program (Default)" << endl;
+            cout << "        0               ; Returns 0 to the program" << endl;
+            cout << "        nop             ; Simply ignores the command" << endl;
+            cout << "        abort           ; Quits execution with an error message" << endl;
+            cout << "  -c, --compile         ; Compiles BF code into native binary, if possible" << endl;
+            cout << "  -o X, --output=X      ; For compiling only (Default=\"a.out\")" << endl;
+            cout << "  -d X, --data=X        ; Memory initialization data( ASCII file )" << endl;
+            cout << "  -i, --stdin           ; Take code input from standard input instead" << endl;
+            cout << "  -j, --lang=jump       ; Uses \'JumpFuck\' instead of vanilla" << endl;
+            cout << "  -x [N], --lang=ext[N] ; Uses \'Extended Brainfuck Type N\' instead of vanilla" << endl;
+            cout << "  --lang=[X]            ; Uses some other variant/extension instead of vanilla" << endl;
+            cout << "        ext[1]          ; Uses \'Extended Brainfuck Type I\' instead" << endl;
+            cout << "        ext2            ; Uses \'Extended Brainfuck Type II\' instead" << endl;
+            cout << "        ext3            ; Uses \'Extended Brainfuck Type III\' instead" << endl;
+            cout << "        jump            ; Uses \'JumpFuck\' instead" << endl;
+            cout << "        love            ; Uses \'Brainlove\' instead" << endl;
+            cout << "        stacked         ; Uses \'Stacked Brainfuck\' instead" << endl;
+            cout << "        bcd             ; Uses \'BCDFuck\' instead" << endl;
+            cout << "        stuck           ; Uses \'Brainstuck\' instead" << endl;
+            cout << "        dollar          ; Uses \'Brainfuck$\' instead" << endl;
+            cout << "        self-mod        ; Uses \'Self-modifying Brainfuck\' instead" << endl;
+            cout << "        caret           ; Uses \'Brainfuck^\' instead" << endl;
+            cout << "        bit-chan        ; Uses \'Bitchanger\' instead" << endl;
+            cout << "        compressed      ; Uses \'CompressedFuck\' instead" << endl;
             exit(0);
-        } else if (temp == "-v" || temp == "--version") {
+        break;
+        case 'v':
             cout << "Copyright (C) 2017, GReaperEx(Marios F.)" << endl;
             cout << "Brainfunk v" VERSION << endl;
             exit(0);
-        } else if (strncmp(argv[i], "--cell-size=", 12) == 0) {
-            if (!(stringstream(&argv[i][12]) >> cellSize)) {
+        break;
+        case 's':
+            if (!(stringstream(optarg) >> cellSize)) {
                 cellSize = 0; //! Have it get handled by bsState's constructor
             }
-        } else if (strncmp(argv[i], "--cell-count=", 13) == 0) {
-            if (!(stringstream(&argv[i][13]) >> cellCount)) {
+        break;
+        case 't':
+            if (!(stringstream(optarg) >> cellCount)) {
                 cellCount = 0;
             }
-        } else if (temp == "--wrap-pointer") {
+        break;
+        case 'w':
             wrapPtr = true;
-        } else if (temp == "--dynamic-tape") {
+        break;
+        case 'y':
             dynamic = true;
-        } else if (strncmp(argv[i], "--on-eof=", 9) == 0) {
-            string eofAction;
-            if (!(stringstream(&argv[i][9]) >> eofAction)) {
-                cerr << "Error: Expected EOF mode after \"-on-eof=\" option." << endl;
-                exit(-1);
-            }
+        break;
+        case 'e':
+        {
+            string eofAction(optarg);
             if (eofAction == "-1") {
                 onEOF = IBasicState::RETM1;
             } else if (eofAction == "0") {
@@ -128,84 +163,100 @@ int main(int argc, char* argv[])
             } else if (eofAction == "abort") {
                 onEOF = IBasicState::ABORT;
             }
-        } else if (temp == "-x" || temp == "--extended") {
-            useVariant = EXTENDED;
-        } else if (temp == "-x2" || temp == "--extended2") {
-            useVariant = EXTENDED2;
-        } else if (temp == "-x3" || temp == "--extended3") {
-            useVariant = EXTENDED3;
-        } else if (temp == "--love") {
-            useVariant = LOVE;
-        } else if (temp == "--stacked") {
-            useVariant = STACKED;
-        } else if (temp == "--bcd") {
-            useVariant = BCD;
-        } else if (temp == "--stuck") {
-            useVariant = STUCK;
-        } else if (temp == "--dollar") {
-            useVariant = DOLLAR;
-        } else if (temp == "--self-mod") {
-            useVariant = SELFMOD;
-        } else if (temp == "--caret") {
-            useVariant = CARET;
-        } else if (temp == "--bit-chan") {
-            useVariant = BITCHAN;
-        } else if (temp == "--compressed") {
-            useVariant = COMPRESSED;
-        } else if (temp == "-j" || temp == "--jump") {
-            useVariant = JUMP;
-        } else if (temp == "-c" || temp == "--compile") {
+        }
+        break;
+        case 'c':
             compile = true;
-        } else if (temp == "-o") {
-            if (i+1 < argc) {
-                if (output_file != "a.out") {
-                    cerr << "Warning: Output file was set more than once. Ignoring previous value." << endl;
-                }
-                output_file = argv[++i];
-            } else {
-                cerr << "Error: Expected output file after \"-o\" option." << endl;
-                exit(-1);
-            }
-        } else if (strncmp(argv[i], "--output=", 9) == 0) {
+        break;
+        case 'o':
             if (output_file != "a.out") {
                 cerr << "Warning: Output file was set more than once. Ignoring previous value." << endl;
+                cerr << "       : " << output_file << " -> " << optarg << endl;
             }
-            if (!getline(stringstream(&argv[i][9]), output_file) || output_file.empty()) {
-                cerr << "Error: Expected output file after \"--output=\" option." << endl;
-                exit(-1);
-            }
-        } else if (temp == "-d") {
-            if (i+1 < argc) {
-                if (dataFile != "") {
-                    cerr << "Warning: Data file was set more than once. Ignoring previous value." << endl;
-                }
-                dataFile = argv[++i];
-            } else {
-                cerr << "Error: Expected data file after \"-d\" option." << endl;
-                exit(-1);
-            }
-        } else if (strncmp(argv[i], "--data=", 7) == 0) {
+            output_file = optarg;
+        break;
+        case 'd':
             if (dataFile != "") {
                 cerr << "Warning: Data file was set more than once. Ignoring previous value." << endl;
+                cerr << "       : " << dataFile << " -> " << optarg << endl;
             }
-            if (!getline(stringstream(&argv[i][7]), dataFile) || dataFile.empty()) {
-                cerr << "Error: Expected data file after \"--data=\" option." << endl;
-                exit(-1);
-            }
-        } else if (temp == "--stdin") {
+            dataFile = optarg;
+        break;
+        case 'i':
             useStdin = true;
-            if (!input_file.empty()) {
-                cerr << "Warning: Input file will be ignored, set to read from stdin." << endl;
+        break;
+        case 'j':
+            useVariant = JUMP;
+        break;
+        case 'x':
+            if (!optarg) {
+                useVariant = EXTENDED;
+            } else {
+                switch (optarg[0])
+                {
+                case '1':
+                    useVariant = EXTENDED;
+                break;
+                case '2':
+                    useVariant = EXTENDED2;
+                break;
+                case '3':
+                    useVariant = EXTENDED3;
+                break;
+                default:
+                    cerr << "Warning: Can't understand -x type, defaulting to 1." << endl;
+                    useVariant = EXTENDED;
+                }
             }
-        } else {
-            if (useStdin) {
-                cerr << "Warning: Input file will be ignored, set to read from stdin." << endl;
-            } else if (!input_file.empty()) {
-                cerr << "Warning: Input file was set more than once. Ignoring previous value." << endl;
+        break;
+        case 256:
+        {
+            string temp = optarg;
+            if (temp == "ext" || temp == "ext1") {
+                useVariant = EXTENDED;
+            } else if (temp == "ext2") {
+                useVariant = EXTENDED2;
+            } else if (temp == "ext3") {
+                useVariant = EXTENDED3;
+            } else if (temp == "jump") {
+                useVariant = JUMP;
+            } else if (temp == "love") {
+                useVariant = LOVE;
+            } else if (temp == "stacked") {
+                useVariant = STACKED;
+            } else if (temp == "bcd") {
+                useVariant = BCD;
+            } else if (temp == "stuck") {
+                useVariant = STUCK;
+            } else if (temp == "dollar") {
+                useVariant = DOLLAR;
+            } else if (temp == "self-mod") {
+                useVariant = SELFMOD;
+            } else if (temp == "caret") {
+                useVariant = CARET;
+            } else if (temp == "bit-chan") {
+                useVariant = BITCHAN;
+            } else if (temp == "compressed") {
+                useVariant = COMPRESSED;
+            } else {
+                cerr << "Warning: Can't understand requested lang, defaulting to vanilla." << endl;
+                useVariant = VANILLA;
             }
-            input_file = temp;
+        }
+        break;
+        case '?':
+        break;
         }
     }
+    for (int i = optind; i < argc; i++) {
+        if (!input_file.empty()) {
+            cerr << "Warning: Input file is already set, ignoring previous value." << endl;
+            cerr << "       : " << input_file << " -> " << argv[i] << endl;
+        }
+        input_file = argv[i];
+    }
+
+    //! Running begins here
 
     try {
         IBasicState* myBF;
