@@ -80,6 +80,10 @@ private:
             bufOutput = 0;
         }
     }
+
+    bool hasInstructions() const {
+        return !instructions.empty();
+    }
 };
 
 #endif // CBCD_STATE_H

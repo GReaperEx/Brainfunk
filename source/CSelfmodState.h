@@ -34,6 +34,10 @@ public:
 protected:
     void runInstruction(const BFinstr& instr);
     BFinstr& getCode(int ip);
+
+    bool hasInstructions() const {
+        return true;
+    }
 };
 
 #endif // CSELFMOD_STATE_H

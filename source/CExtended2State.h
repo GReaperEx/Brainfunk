@@ -36,6 +36,10 @@ protected:
 
     void runInstruction(const BFinstr& instr);
     BFinstr& getCode(int ip);
+
+    bool hasInstructions() const {
+        return true;
+    }
 };
 
 #endif // CEXTENDED2_STATE_H

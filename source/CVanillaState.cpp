@@ -111,7 +111,7 @@ void CVanillaState::translate(std::istream& input)
 void CVanillaState::run()
 {
     IP = 0;
-    keepRunning = true;
+    keepRunning = hasInstructions();
 
     while (keepRunning) {
         runInstruction(getCode(IP));

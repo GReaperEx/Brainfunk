@@ -85,6 +85,10 @@ protected:
     virtual void compileInstruction(std::ostream& output, const BFinstr& instr);
 
     virtual BFinstr& getCode(int ip);
+
+    virtual bool hasInstructions() const {
+        return !instructions.empty();
+    }
 };
 
 #endif // CVANILLA_STATE_H
