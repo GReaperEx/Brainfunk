@@ -39,13 +39,14 @@
 #include "CCaretState.h"
 #include "CBitchanState.h"
 #include "CCompressedState.h"
+#include "CLollerState.h"
 
-#define VERSION "0.7.6"
+#define VERSION "0.8.1"
 
 using namespace std;
 
 enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3, LOVE, STACKED, BCD, STUCK, JUMP,
-                    DOLLAR, SELFMOD, CARET, BITCHAN, COMPRESSED };
+                    DOLLAR, SELFMOD, CARET, BITCHAN, COMPRESSED, LOLLER };
 
 const char shortOptions[] = "hvs:t:wye:co:d:ijx::";
 
@@ -128,6 +129,7 @@ int main(int argc, char* argv[])
             cout << "        caret           ; Uses \'Brainfuck^\' instead" << endl;
             cout << "        bit-chan        ; Uses \'Bitchanger\' instead" << endl;
             cout << "        compressed      ; Uses \'CompressedFuck\' instead" << endl;
+            cout << "        loller          ; Uses \'Brainloller\' instead" << endl;
             exit(0);
         break;
         case 'v':
@@ -238,6 +240,8 @@ int main(int argc, char* argv[])
                 useVariant = BITCHAN;
             } else if (temp == "compressed") {
                 useVariant = COMPRESSED;
+            } else if (temp == "loller") {
+                useVariant = LOLLER;
             } else {
                 cerr << "Warning: Can't understand requested lang, defaulting to vanilla." << endl;
                 useVariant = VANILLA;
@@ -328,6 +332,9 @@ int main(int argc, char* argv[])
         break;
         case COMPRESSED:
             myBF = new CCompressedState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile);
+        break;
+        case LOLLER:
+            myBF = new CLollerState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile);
         break;
         }
 

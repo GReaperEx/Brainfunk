@@ -1,5 +1,5 @@
 CFLAGS=-O3 --std=gnu++11 -I "include/"
-LFLAGS=-s
+LFLAGS=-s -lpng
 SRCD = source
 SRC = $(wildcard $(SRCD)/*.cpp)
 OBJD = obj
@@ -9,7 +9,7 @@ INSTALL_PATH=/usr/local
 
 bfk: $(OBJ) $(OBJD)
 	@echo Linking: $@
-	@g++ $(LFLAGS) -o bfk $(OBJ)
+	@g++ -o bfk $(OBJ) $(LFLAGS)
 
 $(OBJD)/%.o: $(SRCD)/%.cpp
 	@echo Compiling: $(<F)

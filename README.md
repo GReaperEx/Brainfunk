@@ -28,4 +28,13 @@ Supported languages up-to-date:
 * Brainfuck^
 * Bitchanger
 * CompressedFuck
+* Brainloller
+
+Libraries and programs required for compilation:
+* png++ 0.2.5 or later( and as an extension, libpng 1.2.x )
+* g++( any with decent C++11 support )
+* GNU Make( any decently recent version )
+
+Programs required for running:
+* gcc( any decently recent version )
 
