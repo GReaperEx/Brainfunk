@@ -18,17 +18,18 @@ Supported languages up-to-date:
   * Type I
   * Type II
   * Type III
-* Brainlove
-* Stacked Brainfuck
 * BCDFuck
-* Brainstuck
-* JumpFuck
-* Brainfuck$
-* Self-modifying Brainfuck
-* Brainfuck^
 * Bitchanger
-* CompressedFuck
+* Brainfuck^
+* Brainfuck$
 * Brainloller
+* Extended Brainloller
+* Brainlove
+* Brainstuck
+* CompressedFuck
+* JumpFuck
+* Self-modifying Brainfuck
+* Stacked Brainfuck
 
 Libraries and programs required for compilation:
 * png++ 0.2.5 or later( and as an extension, libpng 1.2.x )

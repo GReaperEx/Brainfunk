@@ -40,13 +40,14 @@
 #include "CBitchanState.h"
 #include "CCompressedState.h"
 #include "CLollerState.h"
+#include "CExtLollerState.h"
 
-#define VERSION "0.8.1"
+#define VERSION "0.8.6"
 
 using namespace std;
 
 enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3, LOVE, STACKED, BCD, STUCK, JUMP,
-                    DOLLAR, SELFMOD, CARET, BITCHAN, COMPRESSED, LOLLER };
+                    DOLLAR, SELFMOD, CARET, BITCHAN, COMPRESSED, LOLLER, EXTLOLLER };
 
 const char shortOptions[] = "hvs:t:wye:co:d:ijx::";
 
@@ -130,6 +131,7 @@ int main(int argc, char* argv[])
             cout << "        bit-chan        ; Uses \'Bitchanger\' instead" << endl;
             cout << "        compressed      ; Uses \'CompressedFuck\' instead" << endl;
             cout << "        loller          ; Uses \'Brainloller\' instead" << endl;
+            cout << "        ext-lol         ; Uses \'Extended Brainloller\' instead" << endl;
             exit(0);
         break;
         case 'v':
@@ -242,6 +244,8 @@ int main(int argc, char* argv[])
                 useVariant = COMPRESSED;
             } else if (temp == "loller") {
                 useVariant = LOLLER;
+            } else if (temp == "ext-lol") {
+                useVariant = EXTLOLLER;
             } else {
                 cerr << "Warning: Can't understand requested lang, defaulting to vanilla." << endl;
                 useVariant = VANILLA;
@@ -335,6 +339,12 @@ int main(int argc, char* argv[])
         break;
         case LOLLER:
             myBF = new CLollerState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile);
+        break;
+        case EXTLOLLER:
+            myBF = new CExtLollerState(cellSize, onEOF, dataFile);
+            if (wrapPtr) {
+                cerr << "Warning: Pointer wrap-around ignored." << endl;
+            }
         break;
         }
 
