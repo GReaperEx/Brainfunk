@@ -600,10 +600,14 @@ void CVanillaState::runDebug()
             {
             case 'h':
                 cout << "h     ; Prints this helpful list" << endl;
+                cout << "a     ; Aborts the interpreter" << endl;
                 cout << "n     ; Runs the next instruction" << endl;
                 cout << "r     ; Resumes normal execution" << endl;
                 cout << "g N   ; Prints the value of the Nth tape cell( zero-based )" << endl;
                 cout << "s N X ; Gives a new value to the Nth tape cell( zero-based )" << endl;
+            break;
+            case 'a':
+                exit(-1);
             break;
             case 'n':
                 return;

@@ -98,7 +98,9 @@ protected:
     static void signalHandle(int) {
         if (!CVanillaState::state->dbgPaused) {
             CVanillaState::state->dbgPaused = true;
+            std::cout << endl;
         } else {
+            std::cout << endl;
             exit(-1);
         }
     }
