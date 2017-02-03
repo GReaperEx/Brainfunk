@@ -22,7 +22,7 @@
 class CBitchanState : public CVanillaState
 {
 public:
-    CBitchanState(int count, bool wrapPtr, bool dynamicTape, const std::string& dataFile);
+    CBitchanState(int count, bool wrapPtr, bool dynamicTape, const std::string& dataFile, bool debug);
     ~CBitchanState();
 
     void translate(std::istream& input);

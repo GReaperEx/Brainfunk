@@ -24,7 +24,7 @@
 class CJumpState : public CVanillaState
 {
 public:
-    CJumpState(int size, ActionOnEOF onEOF, const std::string& dataFile);
+    CJumpState(int size, ActionOnEOF onEOF, const std::string& dataFile, bool debug);
     ~CJumpState();
 
     //! Converts BF code to manageable token blocks, compressed/optimized if possible

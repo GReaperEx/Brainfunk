@@ -18,8 +18,8 @@
 
 using namespace std;
 
-CExtendedState::CExtendedState(int size, ActionOnEOF onEOF, const std::string& dataFile)
-: CVanillaState(size, 10000, false, true, onEOF, dataFile), storage({0})
+CExtendedState::CExtendedState(int size, ActionOnEOF onEOF, const std::string& dataFile, bool debug)
+: CVanillaState(size, 10000, false, true, onEOF, dataFile, debug), storage({0})
 {}
 
 CExtendedState::~CExtendedState()

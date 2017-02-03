@@ -20,8 +20,8 @@
 
 using namespace std;
 
-CExtended3State::CExtended3State(int size, ActionOnEOF onEOF, const std::string& dataFile)
-: CExtended2State(size, onEOF, dataFile), initPtrPos(0)
+CExtended3State::CExtended3State(int size, ActionOnEOF onEOF, const std::string& dataFile, bool debug)
+: CExtended2State(size, onEOF, dataFile, debug), initPtrPos(0)
 {}
 
 CExtended3State::~CExtended3State()

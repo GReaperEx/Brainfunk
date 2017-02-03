@@ -20,8 +20,8 @@
 
 using namespace std;
 
-CExtended2State::CExtended2State(int size, ActionOnEOF onEOF, const std::string& dataFile)
-: CVanillaState(size, 10000, false, true, onEOF, dataFile), storagePos(0)
+CExtended2State::CExtended2State(int size, ActionOnEOF onEOF, const std::string& dataFile, bool debug)
+: CVanillaState(size, 10000, false, true, onEOF, dataFile, debug), storagePos(0)
 {
     IP = 1;
 }

@@ -20,8 +20,8 @@
 
 #include <png++/png.hpp>
 
-CExtLollerState::CExtLollerState(int size, ActionOnEOF onEOF, const std::string& dataFile)
-: CExtendedState(size, onEOF, dataFile)
+CExtLollerState::CExtLollerState(int size, ActionOnEOF onEOF, const std::string& dataFile, bool debug)
+: CExtendedState(size, onEOF, dataFile, debug)
 {}
 
 CExtLollerState::~CExtLollerState()

@@ -22,7 +22,7 @@
 class CDollarState : public CVanillaState
 {
 public:
-    CDollarState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile);
+    CDollarState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile, bool debug);
     ~CDollarState();
 
     //! Converts BF code to manageable token blocks, compressed/optimized if possible

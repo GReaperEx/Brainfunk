@@ -22,7 +22,7 @@
 class CLollerState : public CVanillaState
 {
 public:
-    CLollerState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile);
+    CLollerState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile, bool debug);
     ~CLollerState();
 
     void translate(std::istream& input);

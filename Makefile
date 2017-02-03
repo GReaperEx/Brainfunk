@@ -1,4 +1,4 @@
-CFLAGS=-O3 --std=gnu++11 -I "include/"
+CFLAGS=-O3 --std=gnu++11
 LFLAGS=-s -lpng
 SRCD = source
 SRC = $(wildcard $(SRCD)/*.cpp)
@@ -49,7 +49,7 @@ re-test:
 	@$(MAKE) --silent test
 
 help:
-	@echo "make            : Compiled the program"
+	@echo "make            : Compiles the program"
 	@echo "make bfk        : Compiles the program"
 	@echo "make test       : Compiles the program and runs tests"
 	@echo "make re-test    : Compiles the program and re-runs tests"

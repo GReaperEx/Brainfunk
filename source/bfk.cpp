@@ -49,7 +49,7 @@ using namespace std;
 enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3, LOVE, STACKED, BCD, STUCK, JUMP,
                     DOLLAR, SELFMOD, CARET, BITCHAN, COMPRESSED, LOLLER, EXTLOLLER };
 
-const char shortOptions[] = "hvs:t:wye:co:d:ijx::";
+const char shortOptions[] = "hvs:t:wye:co:d:ijx::b";
 
 const option longOptions[] = {
     { "help",         no_argument,       0, 'h' },
@@ -63,6 +63,7 @@ const option longOptions[] = {
     { "output",       required_argument, 0, 'o' },
     { "data",         required_argument, 0, 'd' },
     { "stdin",        no_argument,       0, 'i' },
+    { "debug",        no_argument,       0, 'b' },
     { "lang",         required_argument, 0, 256 },
     { 0, 0, 0, 0 }
 };
@@ -73,6 +74,7 @@ int main(int argc, char* argv[])
     int cellCount = 32768; //! More than 30k, aligned for possible optimization when compiling BF code
     bool wrapPtr = false;
     bool dynamic = false;
+    bool debug = false;
 
     LangVariants useVariant = VANILLA;
     IBasicState::ActionOnEOF onEOF = IBasicState::RETM1;
@@ -101,6 +103,7 @@ int main(int argc, char* argv[])
             cout << "Options:" << endl;
             cout << "  -h, --help            ; Print this helpful message and exit" << endl;
             cout << "  -v, --version         ; Print program version and exit" << endl;
+            cout << "  -b, --debug           ; Enables debug mode for the interpreter" << endl;
             cout << "  -s X, --cell-size=X   ; Sets cell size, only accepts 1, 2, 4 or 8 (Default=1)" << endl;
             cout << "  -t X, --tape-size=X   ; Sets amount of available cells (Default=32768)" << endl;
             cout << "  -w, --wrap-pointer    ; Confines the memory pointer between bounds" << endl;
@@ -138,6 +141,9 @@ int main(int argc, char* argv[])
             cout << "Copyright (C) 2017, GReaperEx(Marios F.)" << endl;
             cout << "Brainfunk v" VERSION << endl;
             exit(0);
+        break;
+        case 'b':
+            debug = true;
         break;
         case 's':
             if (!(stringstream(optarg) >> cellSize)) {
@@ -272,61 +278,61 @@ int main(int argc, char* argv[])
         switch (useVariant)
         {
         case VANILLA:
-            myBF = new CVanillaState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile);
+            myBF = new CVanillaState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile, debug);
         break;
         case EXTENDED:
-            myBF = new CExtendedState(cellSize, onEOF, dataFile);
+            myBF = new CExtendedState(cellSize, onEOF, dataFile, debug);
             if (wrapPtr) {
                 cerr << "Warning: Pointer wrap-around ignored." << endl;
             }
         break;
         case EXTENDED2:
-            myBF = new CExtended2State(cellSize, onEOF, dataFile);
+            myBF = new CExtended2State(cellSize, onEOF, dataFile, debug);
             if (wrapPtr) {
                 cerr << "Warning: Pointer wrap-around ignored." << endl;
             }
         break;
         case EXTENDED3:
-            myBF = new CExtended3State(cellSize, onEOF, dataFile);
+            myBF = new CExtended3State(cellSize, onEOF, dataFile, debug);
             if (wrapPtr) {
                 cerr << "Warning: Pointer wrap-around ignored." << endl;
             }
         break;
         case LOVE:
-            myBF = new CLoveState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile);
+            myBF = new CLoveState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile, debug);
         break;
         case STACKED:
-            myBF = new CStackedState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile);
+            myBF = new CStackedState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile, debug);
         break;
         case BCD:
-            myBF = new CBCDState(cellCount, wrapPtr, dynamic, onEOF, dataFile);
+            myBF = new CBCDState(cellCount, wrapPtr, dynamic, onEOF, dataFile, debug);
             if (cellSize != 1) {
                 cerr << "Warning: Custom cell size ignored. 8-bit supported only." << endl;
             }
         break;
         case STUCK:
-            myBF = new CStuckState(cellSize, cellCount, dynamic, onEOF, dataFile);
+            myBF = new CStuckState(cellSize, cellCount, dynamic, onEOF, dataFile, debug);
             if (wrapPtr) {
                 cerr << "Warning: Pointer wrap-around ignored." << endl;
             }
         break;
         case JUMP:
-            myBF = new CJumpState(cellSize, onEOF, dataFile);
+            myBF = new CJumpState(cellSize, onEOF, dataFile, debug);
             if (wrapPtr) {
                 cerr << "Warning: Pointer wrap-around ignored." << endl;
             }
         break;
         case DOLLAR:
-            myBF = new CDollarState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile);
+            myBF = new CDollarState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile, debug);
         break;
         case SELFMOD:
-            myBF = new CSelfmodState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile);
+            myBF = new CSelfmodState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile, debug);
         break;
         case CARET:
-            myBF = new CCaretState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile);
+            myBF = new CCaretState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile, debug);
         break;
         case BITCHAN:
-            myBF = new CBitchanState(cellCount, wrapPtr, dynamic, dataFile);
+            myBF = new CBitchanState(cellCount, wrapPtr, dynamic, dataFile, debug);
             if (cellSize != 1) {
                 cerr << "Warning: Custom cell size ignored." << endl;
             }
@@ -335,13 +341,13 @@ int main(int argc, char* argv[])
             }
         break;
         case COMPRESSED:
-            myBF = new CCompressedState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile);
+            myBF = new CCompressedState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile, debug);
         break;
         case LOLLER:
-            myBF = new CLollerState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile);
+            myBF = new CLollerState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile, debug);
         break;
         case EXTLOLLER:
-            myBF = new CExtLollerState(cellSize, onEOF, dataFile);
+            myBF = new CExtLollerState(cellSize, onEOF, dataFile, debug);
             if (wrapPtr) {
                 cerr << "Warning: Pointer wrap-around ignored." << endl;
             }

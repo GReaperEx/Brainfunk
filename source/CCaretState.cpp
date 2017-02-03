@@ -18,8 +18,8 @@
 
 using namespace std;
 
-CCaretState::CCaretState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const string& dataFile)
-: CVanillaState(size, count, wrapPtr, dynamicTape, onEOF, dataFile)
+CCaretState::CCaretState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const string& dataFile, bool debug)
+: CVanillaState(size, count, wrapPtr, dynamicTape, onEOF, dataFile, debug)
 {}
 
 CCaretState::~CCaretState()

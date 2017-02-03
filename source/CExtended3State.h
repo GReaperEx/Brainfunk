@@ -24,7 +24,7 @@
 class CExtended3State : public CExtended2State
 {
 public:
-    CExtended3State(int size, ActionOnEOF onEOF, const std::string& dataFile);
+    CExtended3State(int size, ActionOnEOF onEOF, const std::string& dataFile, bool debug);
     ~CExtended3State();
 
     //! Prepares memory and code for execution

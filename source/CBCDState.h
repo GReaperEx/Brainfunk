@@ -24,7 +24,7 @@
 class CBCDState : public CVanillaState
 {
 public:
-    CBCDState(int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile);
+    CBCDState(int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile, bool debug);
     ~CBCDState();
 
     //! Converts BF code to manageable token blocks, compressed/optimized if possible

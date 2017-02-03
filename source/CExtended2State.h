@@ -22,7 +22,7 @@
 class CExtended2State : public CVanillaState
 {
 public:
-    CExtended2State(int size, ActionOnEOF onEOF, const std::string& dataFile);
+    CExtended2State(int size, ActionOnEOF onEOF, const std::string& dataFile, bool debug);
     ~CExtended2State();
 
     //! Prepares memory and code for execution

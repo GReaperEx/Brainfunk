@@ -22,7 +22,7 @@
 class CLoveState : public CVanillaState
 {
 public:
-    CLoveState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile);
+    CLoveState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile, bool debug);
     ~CLoveState();
 
     //! Converts BF code to manageable token blocks, compressed/optimized if possible

@@ -22,7 +22,7 @@
 class CCompressedState : public CVanillaState
 {
 public:
-    CCompressedState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile);
+    CCompressedState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile, bool debug);
     ~CCompressedState();
 
     void translate(std::istream& input);

@@ -18,8 +18,8 @@
 
 using namespace std;
 
-CLoveState::CLoveState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile)
-: CVanillaState(size, count, wrapPtr, dynamicTape, onEOF, dataFile), storage({0})
+CLoveState::CLoveState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile, bool debug)
+: CVanillaState(size, count, wrapPtr, dynamicTape, onEOF, dataFile, debug), storage({0})
 {}
 
 CLoveState::~CLoveState()

@@ -28,15 +28,15 @@ public:
         wrapPtr     : Wraps the tape pointer around, can't be true if dynamicTape is also true
         dynamicTape : Makes the available tape grow dynamically when accessing out of upper bounds
      */
-    CVanillaState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile);
+    CVanillaState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile, bool debug);
     ~CVanillaState();
 
     //! Converts BF code to manageable token blocks, compressed/optimized if possible
-    virtual void translate(std::istream& input);
+    void translate(std::istream& input);
     //! Runs translated code
-    virtual void run();
+    void run();
     //! Compiles translated code into C source
-    virtual void compile(std::ostream& output);
+    void compile(std::ostream& output);
 
 protected:
     void* tape;
@@ -89,6 +89,20 @@ protected:
     virtual bool hasInstructions() const {
         return !instructions.empty();
     }
+
+    virtual void runDebug();
+
+    bool doDebug; //! Flag to enable or disable debugging
+    volatile bool dbgPaused;
+
+    static void signalHandle(int) {
+        if (!CVanillaState::state->dbgPaused) {
+            CVanillaState::state->dbgPaused = true;
+        } else {
+            exit(-1);
+        }
+    }
+    static CVanillaState* state;
 };
 
 #endif // CVANILLA_STATE_H

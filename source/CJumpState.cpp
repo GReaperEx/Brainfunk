@@ -18,8 +18,8 @@
 
 using namespace std;
 
-CJumpState::CJumpState(int size, ActionOnEOF onEOF, const string& dataFile)
-: CVanillaState(size, 10000, false, true, onEOF, dataFile)
+CJumpState::CJumpState(int size, ActionOnEOF onEOF, const string& dataFile, bool debug)
+: CVanillaState(size, 10000, false, true, onEOF, dataFile, debug)
 {}
 
 CJumpState::~CJumpState()

@@ -18,8 +18,8 @@
 
 using namespace std;
 
-CStuckState::CStuckState(int size, int count, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile)
-: CVanillaState(size, count, false, dynamicTape, onEOF, dataFile)
+CStuckState::CStuckState(int size, int count, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile, bool debug)
+: CVanillaState(size, count, false, dynamicTape, onEOF, dataFile, debug)
 {}
 
 CStuckState::~CStuckState()

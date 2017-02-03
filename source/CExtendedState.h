@@ -22,7 +22,7 @@
 class CExtendedState : public CVanillaState
 {
 public:
-    CExtendedState(int size, ActionOnEOF onEOF, const std::string& dataFile);
+    CExtendedState(int size, ActionOnEOF onEOF, const std::string& dataFile, bool debug);
     ~CExtendedState();
 
     //! Converts BF code to manageable token blocks, compressed/optimized if possible

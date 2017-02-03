@@ -22,7 +22,7 @@
 class CExtLollerState : public CExtendedState
 {
 public:
-    CExtLollerState(int size, ActionOnEOF onEOF, const std::string& dataFile);
+    CExtLollerState(int size, ActionOnEOF onEOF, const std::string& dataFile, bool debug);
     ~CExtLollerState();
 
     void translate(std::istream& input);

@@ -18,8 +18,8 @@
 
 using namespace std;
 
-CBCDState::CBCDState(int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const string& dataFile)
-: CVanillaState(1, count, wrapPtr, dynamicTape, onEOF, dataFile),
+CBCDState::CBCDState(int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const string& dataFile, bool debug)
+: CVanillaState(1, count, wrapPtr, dynamicTape, onEOF, dataFile, debug),
   swapFunctions(false), bufInput(0), isInputBuf(false), bufOutput(0), isOutputBuf(false)
 {}
 

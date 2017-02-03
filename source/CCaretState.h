@@ -22,7 +22,7 @@
 class CCaretState : public CVanillaState
 {
 public:
-    CCaretState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile);
+    CCaretState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile, bool debug);
     ~CCaretState();
 
     //! Converts BF code to manageable token blocks, compressed/optimized if possible

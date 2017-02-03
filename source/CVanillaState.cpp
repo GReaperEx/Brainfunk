@@ -16,8 +16,14 @@
 
 #include "CVanillaState.h"
 
-CVanillaState::CVanillaState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile)
-: curPtrPos(0), IP(0)
+#include <limits>
+
+#include <signal.h>
+
+CVanillaState* CVanillaState::state = nullptr;
+
+CVanillaState::CVanillaState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile, bool debug)
+: curPtrPos(0), IP(0), doDebug(debug), dbgPaused(true)
 {
     if (size != 1 && size != 2 && size != 4 && size != 8) {
         throw std::runtime_error("Invalid cell size. Only 1, 2, 4 and 8 are supported.");
@@ -55,6 +61,11 @@ CVanillaState::CVanillaState(int size, int count, bool wrapPtr, bool dynamicTape
         }
 
         parseData(input);
+    }
+
+    if (doDebug) {
+        CVanillaState::state = this;
+        signal(SIGINT, CVanillaState::signalHandle);
     }
 }
 
@@ -114,6 +125,10 @@ void CVanillaState::run()
     keepRunning = hasInstructions();
 
     while (keepRunning) {
+        if (doDebug) {
+            runDebug();
+        }
+
         runInstruction(getCode(IP));
         ++IP;
     }
@@ -558,4 +573,73 @@ void CVanillaState::compileInstruction(std::ostream& output, const BFinstr& inst
 CVanillaState::BFinstr& CVanillaState::getCode(int ip)
 {
     return instructions[ip];
+}
+
+void CVanillaState::runDebug()
+{
+    using std::cout;
+    using std::endl;
+    using std::cin;
+
+    if (dbgPaused) {
+        for (;;) {
+            BFinstr tempCode = getCode(IP);
+            cout << "-----------------" << endl;
+            cout << "Current IP      : " << IP << endl;
+            cout << "Current Pointer : " << curPtrPos << endl;
+            cout << "Next instruction: " << tempCode.token;
+            if (tempCode.repeat > 1) {
+                cout << " x" << tempCode.repeat;
+            }
+            cout << endl;
+
+            char choice;
+            cout << "What to do ( h ): ";
+            cin >> choice;
+            switch (choice)
+            {
+            case 'h':
+                cout << "h     ; Prints this helpful list" << endl;
+                cout << "n     ; Runs the next instruction" << endl;
+                cout << "r     ; Resumes normal execution" << endl;
+                cout << "g N   ; Prints the value of the Nth tape cell( zero-based )" << endl;
+                cout << "s N X ; Gives a new value to the Nth tape cell( zero-based )" << endl;
+            break;
+            case 'n':
+                return;
+            break;
+            case 'r':
+                dbgPaused = false;
+                return;
+            break;
+            case 'g':
+            {
+                int index;
+                while (!(cin >> index)) {
+                    cin.clear();
+                    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                }
+                cout << "Cell at #" << index << ':' << endl;
+                cout << "        " << getCell(index).c64 << endl;
+            }
+            break;
+            case 's':
+            {
+                int index;
+                while (!(cin >> index)) {
+                    cin.clear();
+                    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                }
+                CellType newVal;
+                while (!(cin >> newVal.c64)) {
+                    cin.clear();
+                    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                }
+
+                setCell(index, newVal);
+            }
+            break;
+            }
+        }
+    }
 }

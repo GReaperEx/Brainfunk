@@ -18,8 +18,8 @@
 
 #include <cmath>
 
-CBitchanState::CBitchanState(int count, bool wrapPtr, bool dynamicTape, const std::string& dataFile)
-: CVanillaState(1, count, wrapPtr, dynamicTape, RETM1, dataFile)
+CBitchanState::CBitchanState(int count, bool wrapPtr, bool dynamicTape, const std::string& dataFile, bool debug)
+: CVanillaState(1, count, wrapPtr, dynamicTape, RETM1, dataFile, debug)
 {
     if (count < 16) {
         throw std::runtime_error("Bitchanger tape must be at least 16 cells long.");

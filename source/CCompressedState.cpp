@@ -16,8 +16,8 @@
 
 #include "CCompressedState.h"
 
-CCompressedState::CCompressedState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile)
-: CVanillaState(size, count, wrapPtr, dynamicTape, onEOF, dataFile), bufCmd(0), bufBits(0)
+CCompressedState::CCompressedState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile, bool debug)
+: CVanillaState(size, count, wrapPtr, dynamicTape, onEOF, dataFile, debug), bufCmd(0), bufBits(0)
 {}
 
 CCompressedState::~CCompressedState()
