@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
             cout << "  -i, --stdin           ; Take code input from standard input instead" << endl;
             cout << "  -j, --lang=jump       ; Uses \'JumpFuck\' instead of vanilla" << endl;
             cout << "  -x [N], --lang=ext[N] ; Uses \'Extended Brainfuck Type N\' instead of vanilla" << endl;
-            cout << "  --lang=[X]            ; Uses some other variant/extension instead of vanilla" << endl;
+            cout << "  --lang=X              ; Uses some other variant/extension instead of vanilla" << endl;
             cout << "        ext[1]          ; Uses \'Extended Brainfuck Type I\' instead" << endl;
             cout << "        ext2            ; Uses \'Extended Brainfuck Type II\' instead" << endl;
             cout << "        ext3            ; Uses \'Extended Brainfuck Type III\' instead" << endl;
