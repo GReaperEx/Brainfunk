@@ -16,6 +16,8 @@
 
 #include "CStuckState.h"
 
+#include <limits>
+
 using namespace std;
 
 CStuckState::CStuckState(int size, int count, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile, bool debug)
@@ -214,3 +216,89 @@ void CStuckState::compileInstruction(std::ostream& output, const BFinstr& instr)
     }
 }
 
+void CStuckState::runDebug()
+{
+    using std::cout;
+    using std::endl;
+    using std::cin;
+
+    if (dbgPaused) {
+        for (;;) {
+            BFinstr tempCode = getCode(IP);
+            cout << "-----------------" << endl;
+            cout << "Current IP      : " << IP << endl;
+            cout << "Stack size      : " << curPtrPos << endl;
+            cout << "Next instruction: " << tempCode.token;
+            if (tempCode.repeat > 1) {
+                cout << " x" << tempCode.repeat;
+            }
+            cout << endl;
+
+            char choice;
+            cout << "What to do ( h ): ";
+            cin >> choice;
+            switch (choice)
+            {
+            case 'h':
+                cout << "h   ; Prints this helpful list" << endl;
+                cout << "a   ; Aborts the interpreter" << endl;
+                cout << "n   ; Runs the next instruction" << endl;
+                cout << "r   ; Resumes normal execution" << endl;
+                cout << "G   ; Peeks top stack value" << endl;
+                cout << "S X ; Replaces top stack value" << endl;
+                cout << "P X ; Pushes value unto the stack" << endl;
+                cout << "p   ; Pops top value off the stack" << endl;
+            break;
+            case 'a':
+                exit(-1);
+            break;
+            case 'n':
+                return;
+            break;
+            case 'r':
+                dbgPaused = false;
+                return;
+            break;
+            case 'G':
+            {
+                if (curPtrPos >= 0) {
+                    cout << "Top stack cell:" << endl;
+                    cout << "               " << getCell(curPtrPos).c64 << endl;
+                } else {
+                    cout << "Stack is empty. Nothing to show." << endl;
+                }
+            }
+            break;
+            case 'S':
+            {
+                CellType newVal;
+                while (!(cin >> newVal.c64)) {
+                    cin.clear();
+                    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                }
+
+                setCell(curPtrPos, newVal);
+            }
+            break;
+            case 'P':
+            {
+                CellType newVal;
+                while (!(cin >> newVal.c64)) {
+                    cin.clear();
+                    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                }
+
+                setCell(++curPtrPos, newVal);
+            }
+            break;
+            case 'p':
+                if (curPtrPos > 0) {
+                    --curPtrPos;
+                } else {
+                    cout << "Stack is empty. Nothing to pop." << endl;
+                }
+            break;
+            }
+        }
+    }
+}

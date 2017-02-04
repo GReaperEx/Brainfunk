@@ -34,6 +34,8 @@ private:
     void compilePreInst(std::ostream& output);
     void runInstruction(const BFinstr& instr);
     void compileInstruction(std::ostream& output, const BFinstr& instr);
+
+    void runDebug();
 };
 
 #endif // CLOVE_STATE_H

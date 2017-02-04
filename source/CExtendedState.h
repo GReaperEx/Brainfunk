@@ -34,6 +34,12 @@ protected:
     void compilePreInst(std::ostream& output);
     void runInstruction(const BFinstr& instr);
     void compileInstruction(std::ostream& output, const BFinstr& instr);
+
+    void runDebug();
+
+    virtual const CellType getStorage() const {
+        return storage;
+    }
 };
 
 #endif // CEXTENDED_STATE_H

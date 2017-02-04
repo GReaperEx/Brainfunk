@@ -37,6 +37,8 @@ protected:
 
     void runInstruction(const BFinstr& instr);
     void compileInstruction(std::ostream& output, const BFinstr& instr);
+
+    void runDebug();
 };
 
 #endif // CSTACKED_STATE_H

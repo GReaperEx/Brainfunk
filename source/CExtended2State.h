@@ -40,6 +40,10 @@ protected:
     bool hasInstructions() const {
         return true;
     }
+
+    const CellType getStorage() {
+        return getCell(storagePos);
+    }
 };
 
 #endif // CEXTENDED2_STATE_H

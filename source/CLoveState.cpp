@@ -16,6 +16,8 @@
 
  #include "CLoveState.h"
 
+ #include <limits>
+
 using namespace std;
 
 CLoveState::CLoveState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile, bool debug)
@@ -167,5 +169,79 @@ void CLoveState::compileInstruction(std::ostream& output, const BFinstr& instr)
     case '!':
         output << "p[index] = storage;" << endl;
     break;
+    }
+}
+
+void CLoveState::runDebug()
+{
+    using std::cout;
+    using std::endl;
+    using std::cin;
+
+    if (dbgPaused) {
+        for (;;) {
+            BFinstr tempCode = getCode(IP);
+            cout << "-----------------" << endl;
+            cout << "Current IP      : " << IP << endl;
+            cout << "Current Pointer : " << curPtrPos << endl;
+            cout << "Current Storage : " << storage.c64 << endl;
+            cout << "Next instruction: " << tempCode.token;
+            if (tempCode.repeat > 1) {
+                cout << " x" << tempCode.repeat;
+            }
+            cout << endl;
+
+            char choice;
+            cout << "What to do ( h ): ";
+            cin >> choice;
+            switch (choice)
+            {
+            case 'h':
+                cout << "h     ; Prints this helpful list" << endl;
+                cout << "a     ; Aborts the interpreter" << endl;
+                cout << "n     ; Runs the next instruction" << endl;
+                cout << "r     ; Resumes normal execution" << endl;
+                cout << "g N   ; Prints the value of the Nth tape cell( zero-based )" << endl;
+                cout << "s N X ; Gives a new value to the Nth tape cell( zero-based )" << endl;
+            break;
+            case 'a':
+                exit(-1);
+            break;
+            case 'n':
+                return;
+            break;
+            case 'r':
+                dbgPaused = false;
+                return;
+            break;
+            case 'g':
+            {
+                int index;
+                while (!(cin >> index)) {
+                    cin.clear();
+                    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                }
+                cout << "Cell at #" << index << ':' << endl;
+                cout << "        " << getCell(index).c64 << endl;
+            }
+            break;
+            case 's':
+            {
+                int index;
+                while (!(cin >> index)) {
+                    cin.clear();
+                    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                }
+                CellType newVal;
+                while (!(cin >> newVal.c64)) {
+                    cin.clear();
+                    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                }
+
+                setCell(index, newVal);
+            }
+            break;
+            }
+        }
     }
 }

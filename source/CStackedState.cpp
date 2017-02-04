@@ -16,6 +16,8 @@
 
 #include "CStackedState.h"
 
+#include <limits>
+
 using namespace std;
 
 CStackedState::CStackedState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile, bool debug)
@@ -295,5 +297,122 @@ void CStackedState::compileInstruction(std::ostream& output, const BFinstr& inst
         output << "temp = peekStack(pS, sIndex);" << endl;
         output << "p[index] &= temp;" << endl;
     break;
+    }
+}
+
+void CStackedState::runDebug()
+{
+    using std::cout;
+    using std::endl;
+    using std::cin;
+
+    if (dbgPaused) {
+        for (;;) {
+            BFinstr tempCode = getCode(IP);
+            cout << "-----------------" << endl;
+            cout << "Current IP      : " << IP << endl;
+            cout << "Current Pointer :" << curPtrPos << endl;
+            cout << "Stack size      : " << cellStack.size() << endl;
+            cout << "Next instruction: " << tempCode.token;
+            if (tempCode.repeat > 1) {
+                cout << " x" << tempCode.repeat;
+            }
+            cout << endl;
+
+            char choice;
+            cout << "What to do ( h ): ";
+            cin >> choice;
+            switch (choice)
+            {
+            case 'h':
+                cout << "h     ; Prints this helpful list" << endl;
+                cout << "a     ; Aborts the interpreter" << endl;
+                cout << "n     ; Runs the next instruction" << endl;
+                cout << "r     ; Resumes normal execution" << endl;
+                cout << "g N   ; Prints the value of the Nth tape cell( zero-based )" << endl;
+                cout << "s N X ; Gives a new value to the Nth tape cell( zero-based )" << endl;
+                cout << "G     ; Peeks top stack value" << endl;
+                cout << "S X   ; Replaces top stack value" << endl;
+                cout << "P X   ; Pushes value unto the stack" << endl;
+                cout << "p     ; Pops top value off the stack" << endl;
+            break;
+            case 'a':
+                exit(-1);
+            break;
+            case 'n':
+                return;
+            break;
+            case 'r':
+                dbgPaused = false;
+                return;
+            break;
+            case 'g':
+            {
+                int index;
+                while (!(cin >> index)) {
+                    cin.clear();
+                    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                }
+                cout << "Cell at #" << index << ':' << endl;
+                cout << "        " << getCell(index).c64 << endl;
+            }
+            break;
+            case 's':
+            {
+                int index;
+                while (!(cin >> index)) {
+                    cin.clear();
+                    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                }
+                CellType newVal;
+                while (!(cin >> newVal.c64)) {
+                    cin.clear();
+                    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                }
+
+                setCell(index, newVal);
+            }
+            break;
+            case 'G':
+            {
+                if (!cellStack.empty()) {
+                    cout << "Top stack cell:" << endl;
+                    cout << "               " << cellStack.back().c64 << endl;
+                } else {
+                    cout << "Stack is empty. Nothing to show." << endl;
+                }
+            }
+            break;
+            case 'S':
+            {
+                CellType newVal;
+                while (!(cin >> newVal.c64)) {
+                    cin.clear();
+                    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                }
+
+                cellStack.back() = newVal;
+            }
+            break;
+            case 'P':
+            {
+                CellType newVal;
+                while (!(cin >> newVal.c64)) {
+                    cin.clear();
+                    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                }
+
+                cellStack.push_back(newVal);
+            }
+            break;
+            case 'p':
+                if (!cellStack.empty()) {
+                    cellStack.pop_back();
+                } else {
+                    cout << "Stack is empty. Nothing to pop." << endl;
+                }
+            break;
+            }
+        }
     }
 }
