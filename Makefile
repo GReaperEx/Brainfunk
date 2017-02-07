@@ -7,7 +7,7 @@ OBJ = $(patsubst $(SRCD)/%.cpp,$(OBJD)/%.o,$(SRC))
 TSTD = tests
 INSTALL_PATH=/usr/local
 
-bfk: $(OBJ) $(OBJD)
+bfk: $(OBJD) $(OBJ)
 	@echo Linking: $@
 	@g++ -o bfk $(OBJ) $(LFLAGS)
 
