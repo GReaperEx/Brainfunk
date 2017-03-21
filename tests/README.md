@@ -1,10 +1,10 @@
-#Creating tests for Brainfunk
+# Creating tests for Brainfunk
 
 Simple testing system, but hey, it works.
 
 Each testcase should have its own directory, everything looks cleaner that way.
 
-##Required files
+## Required files
 | Extension | Usefulness |
 | --- | --- |
 | *.bf  | Contains the Brainfuck code you want to run and test |
@@ -13,7 +13,7 @@ Each testcase should have its own directory, everything looks cleaner that way.
 | *.val | Contains valid/ideal output. Beware of extra newlines! |
 | *.use | All the cmd-line arguments it should pass to bfk |
 
-##Generated files:
+## Generated files
 | Extension | Usefulness |
 | --- | --- |
 | *.out | Contains the actual output of a script |
