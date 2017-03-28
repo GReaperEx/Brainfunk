@@ -31,6 +31,7 @@ Supported languages up-to-date:
 * JumpFuck
 * Self-modifying Brainfuck
 * Stacked Brainfuck
+* Drawfuck
 
 Libraries and programs required for compilation:
 * png++ 0.2.5 or later( and as an extension, libpng 1.2.x )
