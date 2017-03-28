@@ -14,24 +14,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
- #include "CLoveState.h"
+#include "CDrawState.h"
 
- #include <limits>
+#include <limits>
 
-using namespace std;
+#include <signal.h>
 
-CLoveState::CLoveState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile, bool debug)
-: CVanillaState(size, count, wrapPtr, dynamicTape, onEOF, dataFile, debug), storage({0})
-{}
+CDrawState::CDrawState(int size, int count, bool wrapPtr, bool dynamicTape, ActionOnEOF onEOF, const std::string& dataFile, bool debug)
+: CVanillaState(size, count, wrapPtr, dynamicTape, onEOF, dataFile, debug),
+  R(0), G(0), B(0), X(0), Y(0), outimg(256, 256)
+{
+    //! png++ doesn't seem to have a method for filling the image with a single color
+    for (int i = 0; i < 256; i++) {
+        for (int j = 0; j < 256; j++) {
+            outimg.set_pixel(j, i, png::basic_rgb_pixel<uint8_t>(255, 255, 255));
+        }
+    }
+}
 
-CLoveState::~CLoveState()
-{}
+CDrawState::~CDrawState()
+{
+    outimg.write("output.png");
+}
 
-void CLoveState::translate(istream& input)
+void CDrawState::translate(std::istream& input)
 {
     char c;
     int bracesCount = 0; //! Counter to check for unbalanced braces
-    int parenCount = 0; //! Counter for unbalanced parenthesis
 
     instructions.clear();
 
@@ -42,6 +51,15 @@ void CLoveState::translate(istream& input)
         case '<':
         case '+':
         case '-':
+        case 'r':
+        case 'g':
+        case 'b':
+        case 'x':
+        case 'y':
+        case 'n':
+        case 's':
+        case 'e':
+        case 'w':
             //! A way to "optimize"/compress BF code, add many consecutive commands together
             if (!instructions.empty() && instructions.back().token == c) {
                 instructions.back().incr();
@@ -49,16 +67,8 @@ void CLoveState::translate(istream& input)
                 instructions.push_back(BFinstr(c));
             }
         break;
-        case '~':
-            if (bracesCount == 0 && parenCount == 0) {
-                throw runtime_error("Cannot break out of non-existent loop.");
-            }
-            instructions.push_back(BFinstr(c));
-        break;
         case '.':
         case ',':
-        case '$':
-        case '!':
             instructions.push_back(BFinstr(c));
         break;
         case '[':
@@ -69,20 +79,10 @@ void CLoveState::translate(istream& input)
             --bracesCount;
             instructions.push_back(BFinstr(c));
         break;
-        case '(':
-            ++parenCount;
-            instructions.push_back(BFinstr(c));
-        break;
-        case ')':
-            --parenCount;
-            instructions.push_back(BFinstr(c));
-        break;
         }
     }
     if (bracesCount != 0) {
-        throw runtime_error("Opening and closing braces don't match.");
-    } else if (parenCount != 0) {
-        throw runtime_error("Opening and closing parenthesis don't match.");
+        throw std::runtime_error("Opening and closing braces don't match.");
     }
 
     //! Appends collected data to tape
@@ -91,88 +91,110 @@ void CLoveState::translate(istream& input)
     }
 }
 
-void CLoveState::compilePreInst(std::ostream& output)
+void CDrawState::compile(std::ostream&)
 {
-    output << "CellType storage = 0;" << endl;
-    CVanillaState::compilePreInst(output);
+    throw std::runtime_error("Cannot compile Drawfuck code.");
 }
 
-void CLoveState::runInstruction(const BFinstr& instr)
+void CDrawState::runInstruction(const BFinstr& instr)
 {
-    CVanillaState::runInstruction(instr);
-
     switch (instr.token)
     {
-    case '(':
-        if (getCell(curPtrPos).c64 != 0) {
+    case '>':
+        curPtrPos += instr.repeat;
+    break;
+    case '<':
+        curPtrPos -= instr.repeat;
+    break;
+    case '+':
+    {
+        CellType temp = getCell(curPtrPos);
+        temp.c64 += instr.repeat;
+        setCell(curPtrPos, temp);
+    }
+    break;
+    case '-':
+    {
+        CellType temp = getCell(curPtrPos);
+        temp.c64 -= instr.repeat;
+        setCell(curPtrPos, temp);
+    }
+    break;
+    case '.':
+        outimg.set_pixel(X, Y, png::basic_rgb_pixel<uint8_t>(R, G, B));
+    break;
+    case ',':
+    {
+        CellType temp = getCell(curPtrPos);
+        userInput(temp.c8);
+        setCell(curPtrPos, temp);
+    }
+    break;
+    case '[':
+        if (getCell(curPtrPos).c64 == 0) {
             int depth = 1;
-            //! Make sure the parenthesis it jumps to is the correct one, at the same level
+            //! Make sure the brace it jumps to is the correct one, at the same level
             while (depth > 0) {
                 ++IP;
                 char token = getCode(IP).token;
-                if (token == '(') {
+                if (token == '[') {
                     ++depth;
-                } else if (token == ')') {
+                } else if (token == ']') {
                     --depth;
                 }
             }
         }
     break;
-    case ')':
-        if (getCell(curPtrPos).c64 == 0) {
+    case ']':
+        if (getCell(curPtrPos).c64 != 0) {
             int depth = 1;
-            //! Make sure the parenthesis it jumps to is the correct one, at the same level
+            //! Make sure the brace it jumps to is the correct one, at the same level
             while (depth > 0) {
                 --IP;
                 char token = getCode(IP).token;
-                if (token == '(') {
+                if (token == '[') {
                     --depth;
-                } else if (token == ')') {
+                } else if (token == ']') {
                     ++depth;
                 }
             }
         }
     break;
-    case '~':
-        for (;;) {
-            char token = getCode(++IP).token;
-            if (token == ')' || token == ']') {
-                break;
-            }
-        }
+    case 'r':
+        R = getCell(curPtrPos).c8;
     break;
-    case '$':
-        storage = getCell(curPtrPos);
+    case 'g':
+        G = getCell(curPtrPos).c8;
     break;
-    case '!':
-        setCell(curPtrPos, storage);
+    case 'b':
+        B = getCell(curPtrPos).c8;
     break;
+    case 'x':
+        X = getCell(curPtrPos).c8;
+    break;
+    case 'y':
+        Y = getCell(curPtrPos).c8;
+    break;
+    case 'n':
+        Y -= instr.repeat;
+    break;
+    case 's':
+        Y += instr.repeat;
+    break;
+    case 'e':
+        X += instr.repeat;
+    break;
+    case 'w':
+        X -= instr.repeat;
+    break;
+    }
+
+    if (IP + 1 >= instructions.size()) {
+        keepRunning = false;
     }
 }
 
-void CLoveState::compileInstruction(std::ostream& output, const BFinstr& instr)
-{
-    switch (instr.token)
-    {
-    case '(':
-        output << "while (!p[index]) {" << endl;
-    break;
-    case ')':
-        output << "}" << endl;
-    break;
-    case '~':
-        output << "break;" << endl;
-    break;
-    case '$':
-        output << "storage = p[index];" << endl;
-    break;
-    case '!':
-        output << "p[index] = storage;" << endl;
-    break;
-    }
-}
-
-void CLoveState::runDebug()
+void CDrawState::runDebug()
 {
     using std::cout;
     using std::endl;
@@ -185,7 +207,8 @@ void CLoveState::runDebug()
             cout << "-----------------" << endl;
             cout << "Current IP      : " << IP << endl;
             cout << "Current Pointer : " << curPtrPos << endl;
-            cout << "Current Storage : " << storage.c64 << endl;
+            cout << "Current Color   : (" << (int)R << ", " << (int)G << ", " << (int)B << ")" << endl;
+            cout << "Current Pixel   : (" << (int)X << ", " << (int)Y << ")" << endl;
             cout << "Next instruction: " << tempCode.token;
             if (tempCode.repeat > 1) {
                 cout << " x" << tempCode.repeat;
@@ -204,6 +227,7 @@ void CLoveState::runDebug()
                 cout << "r     ; Resumes normal execution" << endl;
                 cout << "g N   ; Prints the value of the Nth tape cell( zero-based )" << endl;
                 cout << "s N X ; Gives a new value to the Nth tape cell( zero-based )" << endl;
+                cout << "f     ; Flush current image to the file" << endl;
             break;
             case 'a':
                 exit(-1);
@@ -242,7 +266,11 @@ void CLoveState::runDebug()
                 setCell(index, newVal);
             }
             break;
+            case 'f':
+                outimg.write("output.png");
+            break;
             }
         }
     }
 }
+

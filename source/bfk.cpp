@@ -41,13 +41,14 @@
 #include "CCompressedState.h"
 #include "CLollerState.h"
 #include "CExtLollerState.h"
+#include "CDrawState.h"
 
-#define VERSION "0.8.6"
+#define VERSION "0.9.0"
 
 using namespace std;
 
 enum LangVariants { VANILLA, EXTENDED, EXTENDED2, EXTENDED3, LOVE, STACKED, BCD, STUCK, JUMP,
-                    DOLLAR, SELFMOD, CARET, BITCHAN, COMPRESSED, LOLLER, EXTLOLLER };
+                    DOLLAR, SELFMOD, CARET, BITCHAN, COMPRESSED, LOLLER, EXTLOLLER, DRAW };
 
 const char shortOptions[] = "hvs:t:wye:co:d:ijx::b";
 
@@ -135,6 +136,7 @@ int main(int argc, char* argv[])
             cout << "        compressed      ; Uses \'CompressedFuck\' instead" << endl;
             cout << "        loller          ; Uses \'Brainloller\' instead" << endl;
             cout << "        ext-lol         ; Uses \'Extended Brainloller\' instead" << endl;
+            cout << "        draw            ; Uses \'Drawfuck\' instead" << endl;
             exit(0);
         break;
         case 'v':
@@ -252,6 +254,8 @@ int main(int argc, char* argv[])
                 useVariant = LOLLER;
             } else if (temp == "ext-lol") {
                 useVariant = EXTLOLLER;
+            } else if (temp == "draw") {
+                useVariant = DRAW;
             } else {
                 cerr << "Warning: Can't understand requested lang, defaulting to vanilla." << endl;
                 useVariant = VANILLA;
@@ -352,6 +356,9 @@ int main(int argc, char* argv[])
                 cerr << "Warning: Pointer wrap-around ignored." << endl;
             }
         break;
+        case DRAW:
+            myBF = new CDrawState(cellSize, cellCount, wrapPtr, dynamic, onEOF, dataFile, debug);
+        break;
         }
 
         if (useStdin) {
@@ -391,6 +398,8 @@ int main(int argc, char* argv[])
         } else {
             myBF->run();
         }
+
+        delete myBF;
     } catch (exception& e) {
         cerr << "Error: " << e.what() << endl;
         return EXIT_FAILURE;

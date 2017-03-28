@@ -223,6 +223,7 @@ void CStuckState::runDebug()
     using std::cin;
 
     if (dbgPaused) {
+        cin.clear();
         for (;;) {
             BFinstr tempCode = getCode(IP);
             cout << "-----------------" << endl;
