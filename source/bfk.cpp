@@ -366,6 +366,7 @@ int main(int argc, char* argv[])
                 throw runtime_error("Standard input isn't a binary stream.");
             }
             myBF->translate(cin);
+            cin.clear();
         } else {
             if (input_file.empty()) {
                 throw runtime_error("No input file was given.");
