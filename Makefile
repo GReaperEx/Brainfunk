@@ -19,7 +19,7 @@ $(OBJD)/%.o: $(SRCD)/%.cpp
 
 $(OBJD)/%.d: $(SRCD)/%.cpp
 	@set -e; rm -f $@; \
-	@$(CXX) --std=gnu++11 -MM -MT $(OBJD)/$(*F).o $(CPPFLAGS) $< > $@.$$$$; \
+	$(CXX) --std=gnu++11 -MM -MT $(OBJD)/$(*F).o $(CPPFLAGS) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$
 
