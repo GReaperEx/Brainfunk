@@ -1,11 +1,12 @@
-CFLAGS=-O3 --std=gnu++11
-LFLAGS=-s -lpng
+CFLAGS+= -O3 --std=gnu++11
+LFLAGS+= -s -lpng
 SRCD = source
 SRC = $(wildcard $(SRCD)/*.cpp)
 OBJD = obj
 OBJ = $(patsubst $(SRCD)/%.cpp,$(OBJD)/%.o,$(SRC))
 TSTD = tests
-INSTALL_PATH=/usr/local
+PREFIX?=/usr/local
+target=$(DESTDIR)$(PREFIX)
 
 $(shell mkdir -p $(OBJD) >/dev/null)
 
@@ -34,10 +35,10 @@ clean-test:
 	@$(MAKE) --silent -C $(TSTD)/ clean
 
 install: bfk
-	@install -m 0755 bfk $(INSTALL_PATH)/bin/
+	@install -m 0755 bfk $(target)/bin
 
 remove:
-	@rm -fv $(INSTALL_PATH)/bin/bfk
+	@rm -fv $(target)/bin/bfk
 
 test: bfk
 	@sync bfk
@@ -56,4 +57,3 @@ help:
 	@echo "make remove     : Uninstalls the program"
 	@echo "make clean      : Erases any compilation or testing generated files"
 	@echo "make clean-test : Erases only testing generated files"
-
