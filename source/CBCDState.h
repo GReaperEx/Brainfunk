@@ -63,9 +63,10 @@ private:
         if (!isInputBuf) {
             isInputBuf = true;
             c = bufInput >> 4;
+        } else {
+            isInputBuf = false;
+            c = bufInput & 0xF;
         }
-        isInputBuf = false;
-        c = bufInput & 0xF;
     }
 
     void showOutput(uint8_t nibble) {
